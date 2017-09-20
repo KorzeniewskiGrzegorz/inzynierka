@@ -1,0 +1,208 @@
+//*****************************************************************************
+//
+// Codigo de partida Practica 1.
+// Autores: Eva Gonzalez, Ignacio Herrero, Jose Manuel Cano
+//
+//*****************************************************************************
+
+#include<stdbool.h>
+#include<stdint.h>
+
+#include "inc/hw_memmap.h"
+#include "inc/hw_types.h"
+#include "inc/hw_ints.h"
+#include "driverlib/gpio.h"
+#include "driverlib/pin_map.h"
+#include "driverlib/rom.h"
+#include "driverlib/sysctl.h"
+#include "driverlib/uart.h"
+#include "driverlib/interrupt.h"
+#include "driverlib/adc.h"
+#include "driverlib/timer.h"
+#include "utils/uartstdio.h"
+#include "drivers/buttons.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "semphr.h"
+#include "utils/cpu_usage.h"
+
+#include "drivers/rgb.h"
+
+
+
+///// LCD
+//#include "IFTSPI2_2LCD.h"
+#include "LCD_task.h"
+#include "IFT_LCD_PenColor.h"
+unsigned int BACK_COLOR, POINT_COLOR;
+/////
+
+
+#define LED1TASKPRIO 1
+#define LED1TASKSTACKSIZE 128
+
+//Globales
+
+uint32_t g_ui32CPUUsage;
+uint32_t g_ulSystemClock;
+
+
+
+
+//*****************************************************************************
+//
+// The error routine that is called if the driver library encounters an error.
+//
+//*****************************************************************************
+#ifdef DEBUG
+void
+__error__(char *pcFilename, unsigned long ulLine)
+{
+}
+
+#endif
+
+//*****************************************************************************
+//
+// Aqui incluimos los "ganchos" a los diferentes eventos del FreeRTOS
+//
+//*****************************************************************************
+
+//Esto es lo que se ejecuta cuando el sistema detecta un desbordamiento de pila
+//
+void vApplicationStackOverflowHook(xTaskHandle *pxTask, signed char *pcTaskName)
+{
+	//
+	// This function can not return, so loop forever.  Interrupts are disabled
+	// on entry to this function, so no processor interrupts will interrupt
+	// this loop.
+	//
+	while(1)
+	{
+	}
+}
+
+//Esto se ejecuta cada Tick del sistema. LLeva la estadistica de uso de la CPU (tiempo que la CPU ha estado funcionando)
+void vApplicationTickHook( void )
+{
+	static unsigned char count = 0;
+
+	if (++count == 10)
+	{
+		g_ui32CPUUsage = CPUUsageTick();
+		count = 0;
+	}
+	//return;
+}
+
+//Esto se ejecuta cada vez que entra a funcionar la tarea Idle
+void vApplicationIdleHook (void)
+{
+	SysCtlSleep();
+}
+
+
+//Esto se ejecuta cada vez que entra a funcionar la tarea Idle
+void vApplicationMallocFailedHook (void)
+{
+	while(1);
+}
+
+
+void TEMP1Task(void){
+	float temperatura=21.0;
+	float a=0.1;
+	while(1){
+
+		xQueueSend( temp1_queue,( void * ) &temperatura,portMAX_DELAY);
+		xEventGroupSetBits( ButtonFlags,SENS_1 );
+
+		if(temperatura>=23.0 || temperatura<=20.0) a=-a;
+		temperatura +=a;
+
+		vTaskDelay(10*configTICK_RATE_HZ);
+
+	}
+
+}
+
+
+
+//*****************************************************************************
+//
+// Funcion main(), Inicializa los perifericos, crea las tareas, etc... y arranca el bucle del sistema
+//
+//*****************************************************************************
+int main(void){
+
+	//
+	// Set the clocking to run at 40 MHz from the PLL.
+	//
+	ROM_SysCtlClockSet(SYSCTL_SYSDIV_5 | SYSCTL_USE_PLL | SYSCTL_XTAL_16MHZ |
+			SYSCTL_OSC_MAIN);	//Ponermos el reloj principal a 40 MHz (200 Mhz del Pll dividido por 5)
+
+
+	// Get the system clock speed.
+	g_ulSystemClock = SysCtlClockGet();
+
+
+	//Habilita el clock gating de los perifericos durante el bajo consumo --> perifericos que se desee activos en modo Sleep
+	//                                                                        deben habilitarse con SysCtlPeripheralSleepEnable
+	ROM_SysCtlPeripheralClockGating(true);
+
+	// Inicializa el subsistema de medida del uso de CPU (mide el tiempo que la CPU no esta dormida)
+	// Para eso utiliza un timer, que aqui hemos puesto que sea el TIMER3 (ultimo parametro que se pasa a la funcion)
+	// (y por tanto este no se deberia utilizar para otra cosa).
+	CPUUsageInit(g_ulSystemClock, configTICK_RATE_HZ/10, 3);
+
+
+
+
+
+
+
+
+
+
+
+
+	ButtonFlags   =     xEventGroupCreate();
+			if(ButtonFlags == NULL)
+				while(1);
+
+	Joystick_init();
+
+	TivaLCDInit();
+	Lcd_Init();
+
+	if((xTaskCreate(LCDTask, (portCHAR *)"LCD", 512,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
+	{
+		while(1);
+	}
+
+
+
+	temp1_queue=xQueueCreate(1,sizeof(float));
+		if(NULL==temp1_queue)
+			while(1);
+
+	if((xTaskCreate(TEMP1Task, (portCHAR *)"TEMP1", 128,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
+	{
+		while(1);
+	}
+
+	//
+	// Arranca el  scheduler.  Pasamos a ejecutar las tareas que se hayan activado.
+	//
+	vTaskStartScheduler();	//el RTOS habilita las interrupciones al entrar aqui, asi que no hace falta habilitarlas
+
+	//De la funcion vTaskStartScheduler no se sale nunca... a partir de aqui pasan a ejecutarse las tareas.
+	while(1)
+	{
+		//Si llego aqui es que algo raro ha pasado
+	}
+}
+
+
+
