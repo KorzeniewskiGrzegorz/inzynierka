@@ -116,7 +116,7 @@ void TEMP1Task(void){
 	while(1){
 
 		xQueueSend( temp1_queue,( void * ) &temperatura,portMAX_DELAY);
-		xEventGroupSetBits( ButtonFlags,SENS_1 );
+		//xEventGroupSetBits( ButtonFlags,SENS_1 );
 
 		if(temperatura>=23.0 || temperatura<=20.0) a=-a;
 		temperatura +=a;
@@ -159,9 +159,15 @@ int main(void){
 
 
 
+	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
+		ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+		ROM_GPIOPinConfigure(GPIO_PB0_U1RX);
+		ROM_GPIOPinConfigure(GPIO_PB1_U1TX);
+		ROM_GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+		UARTStdioConfig(1,9600,SysCtlClockGet());
 
-
-
+		ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_UART1);	//La UART tiene que seguir funcionando aunque el micro este dormido
+			ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_GPIOB);
 
 
 

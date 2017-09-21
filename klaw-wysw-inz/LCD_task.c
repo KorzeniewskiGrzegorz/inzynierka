@@ -377,11 +377,12 @@ void Main_screen(void){
 
 	do{
 
+		UARTprintf("AT");
 
 				uint16_t old_opt=opt;
 
 				if(ch){
-					LCD_Clear(BLACK);
+
 
 					char buff[40];
 
@@ -402,6 +403,7 @@ void Main_screen(void){
 
 
 				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTONS | ALL_SENSOR,pdTRUE,pdFALSE,portMAX_DELAY );
+
 
 				if(s & SENS_1)
 				{
@@ -439,6 +441,7 @@ void Main_screen(void){
 						Menu_Conf_0();
 						ch=1;
 						opt=0;
+						LCD_Clear(BLACK);
 						break;
 
 

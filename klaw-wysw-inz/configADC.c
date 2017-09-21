@@ -25,17 +25,17 @@ void Joystick_init(void)
 	}*/
 
 
-	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);
 
 
 
 
-	  GPIOPinTypeGPIOInput(GPIO_PORTB_BASE, GPIO_PIN_0);
-	  GPIOPadConfigSet(GPIO_PORTB_BASE ,GPIO_PIN_0,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD_WPU);
-	  GPIOIntTypeSet(GPIO_PORTB_BASE, 0xf,GPIO_RISING_EDGE);
-	  IntPrioritySet(INT_GPIOB,configMAX_SYSCALL_INTERRUPT_PRIORITY);
-	  	GPIOIntEnable(GPIO_PORTB_BASE,0xf);
-	  	IntEnable(INT_GPIOB);
+	  GPIOPinTypeGPIOInput(GPIO_PORTD_BASE, GPIO_PIN_3);
+	  GPIOPadConfigSet(GPIO_PORTD_BASE ,GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD_WPU);
+	  GPIOIntTypeSet(GPIO_PORTD_BASE, 0xf,GPIO_RISING_EDGE);
+	  IntPrioritySet(INT_GPIOD,configMAX_SYSCALL_INTERRUPT_PRIORITY);
+	  	GPIOIntEnable(GPIO_PORTD_BASE,0xf);
+	  	IntEnable(INT_GPIOD);
 
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
 	SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_ADC0);
@@ -160,7 +160,7 @@ void AlarmaDig_ISR(void)// rutina de interrupcion de las entradas digitales
 {
 
 	portBASE_TYPE higherPriorityTaskWoken=pdFALSE;
-	uint8_t value = ~GPIOPinRead(GPIO_PORTB_BASE, GPIO_PIN_0);
+	uint8_t value = ~GPIOPinRead(GPIO_PORTD_BASE, GPIO_PIN_3);
 
 	xEventGroupSetBitsFromISR(ButtonFlags, OK_BUTTON , &higherPriorityTaskWoken );
 
