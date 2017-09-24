@@ -160,12 +160,12 @@ void AlarmaDig_ISR(void)// rutina de interrupcion de las entradas digitales
 {
 
 	portBASE_TYPE higherPriorityTaskWoken=pdFALSE;
-	uint8_t value = ~GPIOPinRead(GPIO_PORTD_BASE, GPIO_PIN_3);
+
 
 	xEventGroupSetBitsFromISR(ButtonFlags, OK_BUTTON , &higherPriorityTaskWoken );
 
 
 
-	GPIOIntClear(GPIO_PORTB_BASE, GPIO_PIN_0);
+	GPIOIntClear(GPIO_PORTD_BASE, GPIO_PIN_3);
 	portEND_SWITCHING_ISR(higherPriorityTaskWoken);
 }

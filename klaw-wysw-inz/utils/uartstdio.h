@@ -60,6 +60,7 @@ extern "C"
 //*****************************************************************************
 extern void UARTStdioConfig(uint32_t ui32PortNum, uint32_t ui32Baud, uint32_t ui32SrcClock);
 extern int UARTgets(char *pcBuf, uint32_t ui32Len);
+unsigned charUARTgetRespond(char *pcBuf, uint32_t ui32Len);
 extern unsigned char UARTgetc(void);
 extern void UARTprintf(const char *pcString, ...);
 extern void UARTvprintf(const char *pcString, va_list vaArgP);

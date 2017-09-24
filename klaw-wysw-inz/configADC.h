@@ -42,7 +42,7 @@
 
 #define SENS_1 0x0100
 
-#define ALL_BUTTONS 0x1f
+#define ALL_BUTTON 0x1f
 #define ALL_SENSOR 0xff00
 
  EventGroupHandle_t ButtonFlags;

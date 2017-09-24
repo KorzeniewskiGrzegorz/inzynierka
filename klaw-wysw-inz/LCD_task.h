@@ -31,7 +31,8 @@
 #include "task.h"
 #include "queue.h"
 #include "IFT_LCD_PenColor.h"
-
+#include "utils/uartstdio.h"
+#include "IFTSPI2_2LCD.h"
 
 
 void LCDTask(void);

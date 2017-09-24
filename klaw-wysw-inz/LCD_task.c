@@ -365,6 +365,29 @@ void Draw_Pointer(uint8_t opt,uint8_t old_opt){
 
 }
 
+
+void BLE_Query(char *s){
+
+	int i=0;
+
+	char baffer[80]={0,};
+
+
+		UARTprintf(s);
+
+		vTaskDelay(0.3*configTICK_RATE_HZ);
+	if(UARTRxBytesAvail()){
+		while(UARTRxBytesAvail())
+			baffer[i++]=UARTgetc();
+
+	}
+
+
+	LCD_Fill(30,160,210,250,0x02C0);
+	LCD_ShowString(50,200,baffer);
+
+
+}
 void Main_screen(void){
 
 
@@ -377,7 +400,7 @@ void Main_screen(void){
 
 	do{
 
-		UARTprintf("AT");
+
 
 				uint16_t old_opt=opt;
 
@@ -402,7 +425,7 @@ void Main_screen(void){
 
 
 
-				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTONS | ALL_SENSOR,pdTRUE,pdFALSE,portMAX_DELAY );
+				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON | ALL_SENSOR,pdTRUE,pdFALSE,portMAX_DELAY );
 
 
 				if(s & SENS_1)
@@ -471,9 +494,9 @@ void Menu_Conf_0(void){
 
 				if(ch){
 					LCD_Clear(BLACK);
-					LCD_ShowString(40,20,"OPCJA NR 1");
-					LCD_ShowString(40,60,"OPCJA NR 2");
-					LCD_ShowString(40,100,"OPCJA NR 3");
+					LCD_ShowString(40,20,"AT");
+					LCD_ShowString(40,60,"NAZWA ?");
+					LCD_ShowString(40,100,"WERSJA ?");
 					LCD_ShowString(40,140,"WYJSCIE");
 					Draw_Pointer(0,0);
 					ch=0;
@@ -482,7 +505,7 @@ void Menu_Conf_0(void){
 
 				uint16_t old_opt=opt;
 
-				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTONS,pdTRUE,pdFALSE,portMAX_DELAY );
+				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON,pdTRUE,pdFALSE,portMAX_DELAY );
 
 				if(  s& UP_BUTTON ){
 
@@ -502,11 +525,31 @@ void Menu_Conf_0(void){
 					//x+=10;
 
 				}else if(  s& OK_BUTTON ){
+					unsigned char baffer[80]={0,};
+					int i=0;
+					int end=0;
+
 
 					switch(opt){
-					case 0:break;
-					case 1:break;
-					case 2:break;
+					case 0:
+						BLE_Query("AT");
+					break;
+
+					case 1:
+
+
+							BLE_Query("AT+NAME?");
+
+
+
+
+
+
+											break;
+					case 2:
+
+						BLE_Query("AT+VERR?");
+												break;
 					case 3:
 						exit=1;
 						break;
@@ -531,7 +574,7 @@ void LCDTask(void)
 	uint8_t posx=20;
 	uint16_t posy=20;
 
-	xEventGroupClearBits(ButtonFlags,ALL_BUTTONS);
+	xEventGroupClearBits(ButtonFlags,ALL_BUTTON);
 
 
 
@@ -540,7 +583,7 @@ void LCDTask(void)
 
 	while(1)
 	{
-		xEventGroupWaitBits( ButtonFlags,ALL_BUTTONS,pdTRUE,pdFALSE,portMAX_DELAY );
+		xEventGroupWaitBits( ButtonFlags,ALL_BUTTON,pdTRUE,pdFALSE,portMAX_DELAY );
 		Main_screen();
 
 

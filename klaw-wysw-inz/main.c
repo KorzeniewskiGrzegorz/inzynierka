@@ -169,7 +169,7 @@ int main(void){
 		ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_UART1);	//La UART tiene que seguir funcionando aunque el micro este dormido
 			ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_GPIOB);
 
-
+			//UARTLoopbackEnable(UART1_BASE);
 
 
 
@@ -182,7 +182,7 @@ int main(void){
 	TivaLCDInit();
 	Lcd_Init();
 
-	if((xTaskCreate(LCDTask, (portCHAR *)"LCD", 512,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
+	if((xTaskCreate(LCDTask, (portCHAR *)"LCD", 1024,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
 	{
 		while(1);
 	}
