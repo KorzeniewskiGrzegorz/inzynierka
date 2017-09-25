@@ -368,74 +368,88 @@ void Draw_Pointer(uint8_t opt,uint8_t old_opt){
 
 void BLE_Query(char *s){
 
-	int i=0;
-
-	char baffer[80]={0,};
 
 
 		UARTprintf(s);
 
-		vTaskDelay(0.3*configTICK_RATE_HZ);
-	if(UARTRxBytesAvail()){
-		while(UARTRxBytesAvail())
-			baffer[i++]=UARTgetc();
-
-	}
-
-
-	LCD_Fill(30,160,210,250,0x02C0);
-	LCD_ShowString(50,200,baffer);
-
 
 }
-void Main_screen(void){
+
+void UARTTask(void){
+
+	while(1){
+		xEventGroupWaitBits( ButtonFlags,UARTbt_FLAG ,pdTRUE,pdFALSE,portMAX_DELAY );
+
+		uint8_t i=0;
+
+		unsigned char*	pcBuffer;
+		pcBuffer = pvPortMalloc(80);
+
+
+		 for(i=0;i<80;i++)pcBuffer[i]=0;
+
+			i=0;
+
+
+		if(UARTRxBytesAvail()){
+
+
+			uint8_t c;
+			uint8_t end=0;
+
+
+			while(UARTRxBytesAvail() && !end)
+			{
+				c=i;
+				pcBuffer[i++]=UARTgetc();
+				if(pcBuffer[c]==0)end;
+
+			}
+
+			if(pcBuffer[0]!=0){
+				LCD_Fill(30,280,210,310,0x02C0);
+				LCD_ShowString(50,290,pcBuffer);
+			}
+
+		}
+
+
+
+	 vPortFree(pcBuffer);
+	}
+
+}
+
+
+void Menu_Conf_0(void){
 
 
 	 uint8_t ch=1;
-
-	const uint8_t opt_num=4;
+	 uint8_t exit=0;
+	const uint8_t opt_num=6;
 	 uint8_t opt=0;
-
-	 float temp1 = -1.0;
 
 	do{
 
 
 
-				uint16_t old_opt=opt;
 
 				if(ch){
-
-
-					char buff[40];
-
-					if(temp1 >=0) sprintf(buff, "TEMPERATURA 1: %.1f st C", temp1);
-					else sprintf(buff, "TEMPERATURA 1: %s", "????");
-
-					LCD_ShowString(40,20,buff);
-
-
-					LCD_ShowString(40,60,"TEMPERATURA NR 2: ");
-					LCD_ShowString(40,100,"WYLACZNIK STAN: ");
-					LCD_ShowString(40,140,"OPCJE");
-					Draw_Pointer(opt,old_opt);
+					LCD_Clear(BLACK);
+					LCD_ShowString(40,20,"AT");
+					LCD_ShowString(40,60,"AT+RENEW");
+					LCD_ShowString(40,100,"ADRES?");
+					LCD_ShowString(40,140,"LED MODE 2");
+					LCD_ShowString(40,180,"TEMP MODE 1");
+					LCD_ShowString(40,220,"wyjscie");
+					Draw_Pointer(0,0);
 					ch=0;
 				}
 
 
+				uint16_t old_opt=opt;
 
-
-				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON | ALL_SENSOR,pdTRUE,pdFALSE,portMAX_DELAY );
-
-
-				if(s & SENS_1)
-				{
-
-					 xQueueReceive(temp1_queue,( void * ) &temp1,portMAX_DELAY );
-					 ch=1;
-
-
-				}
+				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON  ,pdTRUE,pdFALSE,portMAX_DELAY );
 
 				if(  s& UP_BUTTON ){
 
@@ -454,17 +468,42 @@ void Main_screen(void){
 
 					//x+=10;
 
-				}else if(  s& OK_BUTTON ){
+				}
+				else if(  s& OK_BUTTON ){
 
 					switch(opt){
-					case 0:break;
-					case 1:break;
-					case 2:break;
+					case 0:
+						BLE_Query("AT");
+					break;
+
+					case 1:
+
+
+							BLE_Query("AT+RENEW");
+
+
+
+
+
+
+											break;
+					case 2:
+
+						BLE_Query("AT+ADDR?");
+												break;
 					case 3:
-						Menu_Conf_0();
-						ch=1;
-						opt=0;
-						LCD_Clear(BLACK);
+
+											BLE_Query("AT+MODE2");
+																	break;
+					case 4:
+
+																BLE_Query("AT+MODE1");
+																						break;
+
+
+
+					case 5:
+						exit=1;
 						break;
 
 
@@ -473,18 +512,19 @@ void Main_screen(void){
 
 				}
 
+
 				if(!ch)Draw_Pointer(opt,old_opt);
 
 
-	  }while(1);
+	  }while(!exit);
 }
 
-void Menu_Conf_0(void){
+void Menu_Conf_1(void){
 
 
 	 uint8_t ch=1;
 	 uint8_t exit=0;
-	const uint8_t opt_num=4;
+	const uint8_t opt_num=6;
 	 uint8_t opt=0;
 
 	do{
@@ -495,9 +535,13 @@ void Menu_Conf_0(void){
 				if(ch){
 					LCD_Clear(BLACK);
 					LCD_ShowString(40,20,"AT");
-					LCD_ShowString(40,60,"NAZWA ?");
-					LCD_ShowString(40,100,"WERSJA ?");
-					LCD_ShowString(40,140,"WYJSCIE");
+					LCD_ShowString(40,60,"AT+RENEW");
+					LCD_ShowString(40,100,"AT+IMME1");
+					LCD_ShowString(40,140,"ROLE1");
+					LCD_ShowString(40,180,"CON");
+
+					LCD_ShowString(40,220,"wyjscie");
+
 					Draw_Pointer(0,0);
 					ch=0;
 				}
@@ -525,37 +569,31 @@ void Menu_Conf_0(void){
 					//x+=10;
 
 				}else if(  s& OK_BUTTON ){
-					unsigned char baffer[80]={0,};
-					int i=0;
-					int end=0;
-
 
 					switch(opt){
 					case 0:
 						BLE_Query("AT");
 					break;
-
 					case 1:
 
-
-							BLE_Query("AT+NAME?");
-
-
-
-
-
-
-											break;
+												BLE_Query("AT+RENEW");
+													break;
 					case 2:
 
-						BLE_Query("AT+VERR?");
-												break;
+							BLE_Query("AT+IMME1");
+								break;
 					case 3:
+
+						BLE_Query("AT+ROLE1");
+								break;
+					case 4:
+
+							BLE_Query("AT+COND43639DC103C");
+							break;
+					case 5:
+
 						exit=1;
 						break;
-
-
-
 					}
 
 				}
@@ -568,12 +606,99 @@ void Menu_Conf_0(void){
 }
 
 
+void Main_screen(void){
+
+
+	 uint8_t ch=1;
+
+	const uint8_t opt_num=5;
+	 uint8_t opt=0;
+
+	 float temp1 = -1.0;
+
+	do{
+
+
+
+				uint16_t old_opt=opt;
+
+				if(ch){
+
+
+					char buff[40];
+
+					//if(temp1 >=0) sprintf(buff, "TEMPERATURA 1: %.1f st C", temp1);
+					//else sprintf(buff, "TEMPERATURA 1: %s", "????");
+
+					LCD_ShowString(40,20,"TEMPERATURA 1:");
+
+
+					LCD_ShowString(40,60,"led on ");
+					LCD_ShowString(40,100,"led off");
+					LCD_ShowString(40,140,"PERYFERIUM");
+					LCD_ShowString(40,180,"CENTRAL");
+					Draw_Pointer(opt,old_opt);
+					ch=0;
+				}
+
+
+
+
+				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON ,pdTRUE,pdFALSE,portMAX_DELAY );
+
+
+			 if(  s& UP_BUTTON ){
+
+					if(opt<=0)opt=0;
+						else opt--;
+
+				}else if(  s& DOWN_BUTTON ){
+
+					if(opt>=opt_num-1)opt=opt_num-1;
+							else opt++;
+
+				}else if(  s& LEFT_BUTTON ){
+
+					//x-=10;
+				}else if(  s& RIGHT_BUTTON ){
+
+					//x+=10;
+
+				}else if(  s& OK_BUTTON ){
+
+					switch(opt){
+					case 0:
+
+						BLE_Query("AT+ADC4?");
+						break;
+					case 1:BLE_Query("AT+PIOB1");break;
+					case 2:BLE_Query("AT+PIOB0");break;
+
+					case 3:
+						Menu_Conf_0();
+						ch=1;
+						opt=0;
+						LCD_Clear(BLACK);
+						break;
+
+					case 4:
+						Menu_Conf_1();
+						ch=1;
+						opt=0;
+						LCD_Clear(BLACK);
+						break;
+					}
+				}
+
+				if(!ch)Draw_Pointer(opt,old_opt);
+	  }while(1);
+}
+
+
+
 
 void LCDTask(void)
 {
-	uint8_t posx=20;
-	uint16_t posy=20;
-
 	xEventGroupClearBits(ButtonFlags,ALL_BUTTON);
 
 

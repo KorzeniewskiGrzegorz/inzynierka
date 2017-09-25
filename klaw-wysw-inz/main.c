@@ -110,22 +110,6 @@ void vApplicationMallocFailedHook (void)
 }
 
 
-void TEMP1Task(void){
-	float temperatura=21.0;
-	float a=0.1;
-	while(1){
-
-		xQueueSend( temp1_queue,( void * ) &temperatura,portMAX_DELAY);
-		//xEventGroupSetBits( ButtonFlags,SENS_1 );
-
-		if(temperatura>=23.0 || temperatura<=20.0) a=-a;
-		temperatura +=a;
-
-		vTaskDelay(10*configTICK_RATE_HZ);
-
-	}
-
-}
 
 
 
@@ -189,11 +173,11 @@ int main(void){
 
 
 
-	temp1_queue=xQueueCreate(1,sizeof(float));
-		if(NULL==temp1_queue)
+	uartbt_queue=xQueueCreate(80,sizeof(unsigned char));
+		if(NULL==uartbt_queue)
 			while(1);
 
-	if((xTaskCreate(TEMP1Task, (portCHAR *)"TEMP1", 128,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
+	if((xTaskCreate(UARTTask, (portCHAR *)"UARTbt", 512,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
 	{
 		while(1);
 	}

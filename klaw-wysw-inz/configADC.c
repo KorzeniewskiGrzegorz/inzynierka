@@ -5,24 +5,10 @@
 #include "configADC.h"
 
 
-
- //SEMANA2: Este fichero implementa la configuracion del ADC y la ISR asociada. Las tareas pueden llamar a la funcion configADC_LeeADC (bloqueante) para leer datos del ADC
-//La funcion configADC_DisparaADC(...) (no bloqueante) realiza el disparo software del ADC
-//La funcion configADC_IniciaADC realiza la configuración del ADC: Los Pines E0 a E3 se ponen como entradas analógicas (AIN3 a AIN0 respectivamente). Ademas crea la cola de mensajes necesaria para que la funcion configADC_LeeADC sea bloqueante
-
-
-
-
 void Joystick_init(void)
 {
 
-	/*if(ButtonFlags ==NULL)
-	{
-		ButtonFlags   =     xEventGroupCreate();
-		if(ButtonFlags == NULL)
-			while(1);
 
-	}*/
 
 
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOD);

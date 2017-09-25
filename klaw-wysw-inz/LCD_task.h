@@ -36,5 +36,6 @@
 
 
 void LCDTask(void);
+void UARTTask(void);
 
 #endif /* LCD_TASK_H_ */

@@ -40,13 +40,13 @@
 #define RIGHT_BUTTON   	0x4
 #define OK_BUTTON 		0x10
 
-#define SENS_1 0x0100
+#define UARTbt_FLAG 0x0100
 
 #define ALL_BUTTON 0x1f
 #define ALL_SENSOR 0xff00
 
  EventGroupHandle_t ButtonFlags;
- QueueHandle_t  temp1_queue;
+ QueueHandle_t  uartbt_queue;
 
 
 

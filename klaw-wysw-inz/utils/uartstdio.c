@@ -1457,8 +1457,12 @@ void UARTStdioIntHandler(void)
 			// there, otherwise throw it away.
 			//
 
+
 			xQueueSendFromISR(xRxedChars,&cChar,&xHigherPriorityTaskWoken);
+
 		}
+		portBASE_TYPE higherPriorityTaskWoken=pdFALSE;
+		xEventGroupSetBitsFromISR(ButtonFlags, UARTbt_FLAG, &higherPriorityTaskWoken );
 	}
 
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
