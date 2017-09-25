@@ -380,10 +380,10 @@ void UARTTask(void){
 	while(1){
 		xEventGroupWaitBits( ButtonFlags,UARTbt_FLAG ,pdTRUE,pdFALSE,portMAX_DELAY );
 
-		uint8_t i=0;
+		uint16_t i=0;
 
 		unsigned char*	pcBuffer;
-		pcBuffer = pvPortMalloc(80);
+		pcBuffer = pvPortMalloc(512);
 
 
 		 for(i=0;i<80;i++)pcBuffer[i]=0;
@@ -394,14 +394,15 @@ void UARTTask(void){
 		if(UARTRxBytesAvail()){
 
 
-			uint8_t c;
-
-
-
 			while(UARTRxBytesAvail() )
 			{
 
 				pcBuffer[i++]=UARTgetc();
+				if(i==20 || i==40){
+					pcBuffer[i]="\n";
+				i+=2;
+
+				}
 
 
 			}
@@ -484,7 +485,7 @@ void Menu_Conf_0(void){
 					case 1:
 
 
-							BLE_Query("AT+RENEW");
+							BLE_Query("AT+DISI?");
 
 
 
