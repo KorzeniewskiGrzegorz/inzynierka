@@ -36,7 +36,8 @@
 #define		LCD_CS			GPIO_PIN_7
 #define		LCD_REST		GPIO_PIN_4
 
-
+#include "FreeRTOS.h"
+#include "semphr.h"
 
 // Variables //
 uint32_t	SysFreq;
@@ -75,6 +76,6 @@ extern void LCD_Show2Num(u16 x,u16 y,u16 num,u8 len);
 extern void LCD_ShowString(u16 x,u16 y,const u8 *p);
 extern	void	notrequired(void);
 
-
+xSemaphoreHandle semaphore_lcd;
 
 #endif /* CLOCKFUNC_H_ */

@@ -166,6 +166,12 @@ int main(void){
 	TivaLCDInit();
 	Lcd_Init();
 
+	semaphore_lcd=  xSemaphoreCreateMutex();
+	if(semaphore_lcd==NULL)
+	{
+		while(1);
+	}
+
 	if((xTaskCreate(LCDTask, (portCHAR *)"LCD", 1024,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
 	{
 		while(1);

@@ -35,6 +35,7 @@
 #include "IFTSPI2_2LCD.h"
 
 
+
 void LCDTask(void);
 void UARTTask(void);
 

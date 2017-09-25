@@ -395,20 +395,25 @@ void UARTTask(void){
 
 
 			uint8_t c;
-			uint8_t end=0;
 
 
-			while(UARTRxBytesAvail() && !end)
+
+			while(UARTRxBytesAvail() )
 			{
-				c=i;
+
 				pcBuffer[i++]=UARTgetc();
-				if(pcBuffer[c]==0)end;
+
 
 			}
 
 			if(pcBuffer[0]!=0){
+
+
+
+
 				LCD_Fill(30,280,210,310,0x02C0);
 				LCD_ShowString(50,290,pcBuffer);
+
 			}
 
 		}
@@ -702,7 +707,7 @@ void LCDTask(void)
 	xEventGroupClearBits(ButtonFlags,ALL_BUTTON);
 
 
-
+	LCD_Clear(BLACK);
 	LCD_DrawImage(0,0, 240,319, intro);
 
 

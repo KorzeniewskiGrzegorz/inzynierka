@@ -254,7 +254,7 @@ void Lcd_Init(void)
 
     SysCtlDelay(SysCtlClockGet()/10);
 
-    LCD_Clear(BLACK);
+   // LCD_Clear(BLACK);
 	BACK_COLOR=BLUE;
 	POINT_COLOR=WHITE;
 
@@ -298,6 +298,7 @@ void Lcd_Init(void)
 ////Color:To clear the screen filled with color
 void LCD_Clear(u16 Color) // CONVERTED TO CCS
 {
+	xSemaphoreTake(  semaphore_lcd, portMAX_DELAY) ;
 	u8 VH,VL;
 	u16 i,j;
 	int x=1,y=1;
@@ -324,25 +325,30 @@ void LCD_Clear(u16 Color) // CONVERTED TO CCS
 //    		kkk = 1;
 //    		kkkbk = 0;
 //    	}
-
+    xSemaphoreGive(  semaphore_lcd) ;
 }
 ////Dotted
 ////POINT_COLOR:The color of this point
 void LCD_DrawPoint(u16 x,u16 y)
 {
+
 	Address_set(x,y,x,y);//Setting the cursor position
 	LCD_WR_DATA(POINT_COLOR);
+
 }
 
 ////Dotted
 ////POINT_COLOR:The color of this point
 void LCD_DrawPixel(u16 x,u16 y,uint16_t color)
 {
+
 	Address_set(x,y,x,y);//Setting the cursor position
 	LCD_WR_DATA(color);
+
 }
 
 void LCD_DrawImage(uint16_t x,uint16_t y, uint16_t w,uint16_t h, uint8_t *data){
+	xSemaphoreTake(  semaphore_lcd, portMAX_DELAY) ;
 	  uint16_t color;
 	  uint8_t msb, lsb;
 	int i, j;
@@ -365,7 +371,7 @@ void LCD_DrawImage(uint16_t x,uint16_t y, uint16_t w,uint16_t h, uint8_t *data){
 	    	}
 
 	  }
-
+	xSemaphoreGive(  semaphore_lcd) ;
 }
 //// Draw a big point
 ////POINT_COLOR:The color of this point
@@ -378,18 +384,21 @@ void LCD_DrawImage(uint16_t x,uint16_t y, uint16_t w,uint16_t h, uint8_t *data){
 //  (xend-xsta)*(yend-ysta)
 void LCD_Fill(u16 xsta,u16 ysta,u16 xend,u16 yend,u16 color) // CONVERTED TO CCS
 {
+	xSemaphoreTake(  semaphore_lcd, portMAX_DELAY) ;
 	u16 i,j;
 	Address_set(xsta,ysta,xend,yend);      //Setting the cursor position
 	for(i=ysta;i<=yend;i++)
 	{
 		for(j=xsta;j<=xend;j++)LCD_WR_DATA(color);//Setting the cursor position
 	}
+	xSemaphoreGive(  semaphore_lcd) ;
 }
 // Draw the line
 //x1,y1:Starting point coordinates
 //x2,y2:End coordinates
 void LCD_DrawLine(u16 x1, u16 y1, u16 x2, u16 y2) // CONVERTED TO CCS
 {
+	xSemaphoreTake(  semaphore_lcd, portMAX_DELAY) ;
 	u16 t;
 	int xerr=0,yerr=0,delta_x,delta_y,distance;
 	int incx,incy,uRow,uCol;
@@ -422,20 +431,24 @@ void LCD_DrawLine(u16 x1, u16 y1, u16 x2, u16 y2) // CONVERTED TO CCS
 			uCol+=incy;
 		}
 	}
+	xSemaphoreGive(  semaphore_lcd) ;
 }
 //Draw a rectangle
 void LCD_DrawRectangle(u16 x1, u16 y1, u16 x2, u16 y2) // CONVERTED TO CCS
 {
+	xSemaphoreTake(  semaphore_lcd, portMAX_DELAY) ;
 	LCD_DrawLine(x1,y1,x2,y1);
 	LCD_DrawLine(x1,y1,x1,y2);
 	LCD_DrawLine(x1,y2,x2,y2);
 	LCD_DrawLine(x2,y1,x2,y2);
+	xSemaphoreGive(  semaphore_lcd) ;
 }
 //A circle the size of the appointed position draw
 //(x,y):The center
 //r    :Radius
 void Draw_Circle(u16 x0,u16 y0,u8 r)  // CONVERTED TO CCS
 {
+	xSemaphoreTake(  semaphore_lcd, portMAX_DELAY) ;
 	int a,b;
 	int di;
 	a=0;b=r;
@@ -461,6 +474,7 @@ void Draw_Circle(u16 x0,u16 y0,u8 r)  // CONVERTED TO CCS
 		}
 		LCD_DrawPoint(x0+a,y0+b);
 	}
+	xSemaphoreGive(  semaphore_lcd) ;
 }
 ////Displays a character at the specified position
 //
@@ -470,6 +484,7 @@ void Draw_Circle(u16 x0,u16 y0,u8 r)  // CONVERTED TO CCS
 //
 void LCD_ShowChar(u16 x,u16 y,u8 num,u8 mode) // CONVERTED TO CCS
 {
+
     u8 temp;
     u8 pos,t;
 	u16 x0=x;
@@ -510,6 +525,7 @@ void LCD_ShowChar(u16 x,u16 y,u8 num,u8 mode) // CONVERTED TO CCS
 		}
 	}
 	POINT_COLOR=colortemp;
+
 }
 // m ^ n function
 u32 mypow(u8 m,u8 n)
@@ -525,6 +541,7 @@ u32 mypow(u8 m,u8 n)
 // num: value (0 to 4294967295);
 void LCD_ShowNum(u16 x,u16 y,u32 num,u8 len) // CONVERTED TO CCS
 {
+	xSemaphoreTake(  semaphore_lcd, portMAX_DELAY) ;
 	u8 t,temp;
 	u8 enshow=0;
 	num=(u16)num;
@@ -542,18 +559,21 @@ void LCD_ShowNum(u16 x,u16 y,u32 num,u8 len) // CONVERTED TO CCS
 		}
 	 	LCD_ShowChar(x+8*t,y,temp+48,0);
 	}
+	xSemaphoreGive(  semaphore_lcd) ;
 }
 // Show two figures
 // x, y: starting point coordinates
 // num: number (0 to 99);
 void LCD_Show2Num(u16 x,u16 y,u16 num,u8 len) // CONVERTED TO CCS
 {
+	xSemaphoreTake(  semaphore_lcd, portMAX_DELAY) ;
 	u8 t,temp;
 	for(t=0;t<len;t++)
 	{
 		temp=(num/mypow(10,len-t-1))%10;
 	 	LCD_ShowChar(x+8*t,y,temp+'0',0);
 	}
+	  xSemaphoreGive(  semaphore_lcd) ;
 }
 // Display the string
 // x, y: starting point coordinates
@@ -561,6 +581,8 @@ void LCD_Show2Num(u16 x,u16 y,u16 num,u8 len) // CONVERTED TO CCS
 // With 16 fonts
 void LCD_ShowString(u16 x,u16 y,const u8 *p) // CONVERTED TO CCS
 {
+
+	xSemaphoreTake(  semaphore_lcd, portMAX_DELAY) ;
     while(*p!='\0')
     {
         if(x>LCD_W-16){x=0;y+=16;}
@@ -573,6 +595,7 @@ void LCD_ShowString(u16 x,u16 y,const u8 *p) // CONVERTED TO CCS
         x+=8;
         p++;
     }
+    xSemaphoreGive(  semaphore_lcd) ;
 }
 //
 //// Display a character (32 * 33 size) at the specified location
