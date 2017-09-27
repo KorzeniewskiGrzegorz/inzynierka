@@ -46,7 +46,7 @@ extern "C"
 //
 //*****************************************************************************
 #ifndef UART_RX_BUFFER_SIZE
-#define UART_RX_BUFFER_SIZE     128
+#define UART_RX_BUFFER_SIZE     512
 #define UART_RX_HISTORY_BUF_SIZE	512
 #define UART_RX_HISTORY_DEPTH		16
 #endif

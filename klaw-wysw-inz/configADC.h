@@ -41,12 +41,22 @@
 #define OK_BUTTON 		0x10
 
 #define UARTbt_FLAG 0x0100
+#define TEMPSCAN_FLAG 0x0200
+#define TEMPDONE_FLAG 0x0400
 
 #define ALL_BUTTON 0x1f
 #define ALL_SENSOR 0xff00
 
  EventGroupHandle_t ButtonFlags;
- QueueHandle_t  uartbt_queue;
+ QueueHandle_t  temp_queue;
+ QueueHandle_t  sens_queue;
+ typedef struct {
+ 	uint16_t id;
+ 	uint16_t pomiarC;
+ 	uint16_t pomiarU;
+
+
+ }odczyt;
 
 
 

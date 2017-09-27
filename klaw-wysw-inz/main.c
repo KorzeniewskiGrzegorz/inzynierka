@@ -7,6 +7,8 @@
 
 #include<stdbool.h>
 #include<stdint.h>
+#include<string.h>
+#include<stdlib.h>
 
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
@@ -110,8 +112,91 @@ void vApplicationMallocFailedHook (void)
 }
 
 
+void TEMPTask(void){
+
+	while(1){
 
 
+		xEventGroupWaitBits( ButtonFlags,TEMPSCAN_FLAG ,pdTRUE,pdFALSE,portMAX_DELAY );
+
+		uint16_t i=0;
+		  unsigned char resp[300];//="OK+DISIOK+DISC:4C000215:74278BDAB64445208F0C720EAF059935:01011602C5:D43639DC103C:-054OK+DISC:4C000215:74278BDAB64445208F0C720EAF055695:0005F24FC5:D43639DCBBAC:-054OK+DISCE";
+		 do{
+			 xQueueReceive(temp_queue,&resp[i++],portMAX_DELAY);
+		 }while(uxQueueMessagesWaiting(temp_queue));
+
+	/*	  char stryng[10][200];
+		char * wynik;
+		strcpy(stryng[0],resp);
+
+		int j=0;
+		while( (wynik=strstr( stryng[j++], "OK+DISC:"))!=NULL){
+			wynik+=8;
+			strcpy(stryng[j],wynik);
+		}
+
+		odczyt sens[2];
+
+		int p;
+
+		for( p=1;p<j;p++){
+
+
+			 char   ptr[80];
+			char  tmp1[4];
+			strcpy(ptr,stryng[p]);
+
+
+		 char *cptr=ptr;
+		 cptr+=42;
+		 strncpy (tmp1, cptr,4 );
+		 sens[p-1].id=(uint16_t)strtol(tmp1, NULL, 16);
+		 cptr+=4;
+
+		 unsigned char  tmp2[4]={0,};
+		 strncpy (tmp2, cptr,2 );
+
+		 sens[p-1].pomiarC= (uint16_t)strtol(tmp2, NULL, 16);
+		 cptr+=2;
+
+		 strncpy (tmp2,cptr,2 );
+
+		 sens[p-1].pomiarU= (uint16_t)strtol(tmp2, NULL, 16);
+		 cptr+=2;
+		}*/
+		 unsigned char  stryng[300];
+				 char * wynik;
+
+
+					odczyt sens;
+
+				wynik=strstr( &resp[1], "OK+DISC:");
+				wynik+=50;
+
+				 unsigned char  tmp1[4]={0,};
+				 strncpy (tmp1, wynik,4 );
+				 sens.id=(uint16_t)strtol(tmp1, NULL, 16);
+				 wynik+=4;
+
+				 unsigned char  tmp2[4]={0,};
+				 strncpy (tmp2, wynik,2 );
+
+				 sens.pomiarC= (uint16_t)strtol(tmp2, NULL, 16);
+				 wynik+=2;
+
+				 strncpy (tmp2,wynik,2 );
+
+				 sens.pomiarU= (uint16_t)strtol(tmp2, NULL, 16);
+
+
+
+
+		xQueueSend(sens_queue,&sens,portMAX_DELAY);
+		xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
+		vTaskDelay(4*configTICK_RATE_HZ);
+		UARTprintf("AT+DISI?");
+	}
+}
 
 //*****************************************************************************
 //
@@ -179,11 +264,20 @@ int main(void){
 
 
 
-	uartbt_queue=xQueueCreate(80,sizeof(unsigned char));
-		if(NULL==uartbt_queue)
+	temp_queue=xQueueCreate(300,sizeof(unsigned char));
+	if(NULL==temp_queue)
 			while(1);
 
+	sens_queue=xQueueCreate(5,sizeof(odczyt));
+		if(NULL==sens_queue)
+				while(1);
+
 	if((xTaskCreate(UARTTask, (portCHAR *)"UARTbt", 512,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
+	{
+		while(1);
+	}
+
+	if((xTaskCreate(TEMPTask, (portCHAR *)"temp", 2048,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
 	{
 		while(1);
 	}

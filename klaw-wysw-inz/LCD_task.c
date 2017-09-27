@@ -381,35 +381,69 @@ void UARTTask(void){
 		xEventGroupWaitBits( ButtonFlags,UARTbt_FLAG ,pdTRUE,pdFALSE,portMAX_DELAY );
 
 		uint16_t i=0;
+		 uint8_t copy=0;
+		uint16_t j=0;
 
 		unsigned char*	pcBuffer;
 		pcBuffer = pvPortMalloc(512);
+		 unsigned char scan_response[300]={0,};
 
 
 		 for(i=0;i<80;i++)pcBuffer[i]=0;
 
 			i=0;
 
-
-		if(UARTRxBytesAvail()){
-
+			vTaskDelay(4*configTICK_RATE_HZ);
 
 			while(UARTRxBytesAvail() )
 			{
 
-				pcBuffer[i++]=UARTgetc();
+				if(i==8)
+					if(pcBuffer[0]=='O')
+						if(pcBuffer[1]=='K')
+							if(pcBuffer[2]=='+')
+								if(pcBuffer[3]=='D')
+									if(pcBuffer[4]=='I')
+										if(pcBuffer[5]=='S')
+											if(pcBuffer[6]=='I')
+												if(pcBuffer[7]=='S')
+												{
+													while(j<8){
+														scan_response[j]=pcBuffer[j++];
+
+													}
+													copy=1;
+													vTaskDelay(3*configTICK_RATE_HZ);
+												}
+
+
+				if(copy){
+					scan_response[j++]=pcBuffer[i++]=UARTgetc();
+				}else
+					pcBuffer[i++]=UARTgetc();
+
+
 				if(i==20 || i==40){
 					pcBuffer[i]="\n";
 				i+=2;
 
 				}
+			}
 
+
+			if(copy)
+			{
+				uint16_t x;
+				for(x=0;x<j;x++)
+					xQueueSend(temp_queue,&scan_response[x],portMAX_DELAY);
+
+				xEventGroupSetBits(ButtonFlags, TEMPSCAN_FLAG);
 
 			}
 
+
+
 			if(pcBuffer[0]!=0){
-
-
 
 
 				LCD_Fill(30,280,210,310,0x02C0);
@@ -417,7 +451,7 @@ void UARTTask(void){
 
 			}
 
-		}
+
 
 
 
@@ -633,10 +667,10 @@ void Main_screen(void){
 
 					char buff[40];
 
-					//if(temp1 >=0) sprintf(buff, "TEMPERATURA 1: %.1f st C", temp1);
-					//else sprintf(buff, "TEMPERATURA 1: %s", "????");
+					if(temp1 >=0) sprintf(buff, "TEMPERATURA 1:%.2f st C", temp1);
+					else sprintf(buff, "TEMPERATURA 1: %s", "????");
 
-					LCD_ShowString(40,20,"TEMPERATURA 1:");
+					LCD_ShowString(40,20,buff);
 
 
 					LCD_ShowString(40,60,"led on ");
@@ -650,7 +684,7 @@ void Main_screen(void){
 
 
 
-				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON ,pdTRUE,pdFALSE,portMAX_DELAY );
+				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON | ALL_SENSOR ,pdTRUE,pdFALSE,portMAX_DELAY );
 
 
 			 if(  s& UP_BUTTON ){
@@ -670,12 +704,21 @@ void Main_screen(void){
 
 					//x+=10;
 
+				}else if(  s& TEMPDONE_FLAG ){
+
+					odczyt moj;
+					xQueueReceive(sens_queue,&moj,portMAX_DELAY);
+					temp1=moj.pomiarC;
+					float f=(float)moj.pomiarU/100;
+					temp1+=f;
+					ch=1;
+
 				}else if(  s& OK_BUTTON ){
 
 					switch(opt){
 					case 0:
 
-						BLE_Query("AT+ADC4?");
+						BLE_Query("AT+DISI?");
 						break;
 					case 1:BLE_Query("AT+PIOB1");break;
 					case 2:BLE_Query("AT+PIOB0");break;
@@ -711,6 +754,7 @@ void LCDTask(void)
 	LCD_Clear(BLACK);
 	LCD_DrawImage(0,0, 240,319, intro);
 
+	UARTprintf("AT+DISI?");
 
 	while(1)
 	{
