@@ -114,84 +114,67 @@ void vApplicationMallocFailedHook (void)
 
 void TEMPTask(void){
 
-	while(1){
 
+
+	while(1){
+		odczyt sens[10];
+		uint8_t sens_amount=0;
 
 		xEventGroupWaitBits( ButtonFlags,TEMPSCAN_FLAG ,pdTRUE,pdFALSE,portMAX_DELAY );
 
 		uint16_t i=0;
-		  unsigned char resp[300];//="OK+DISIOK+DISC:4C000215:74278BDAB64445208F0C720EAF059935:01011602C5:D43639DC103C:-054OK+DISC:4C000215:74278BDAB64445208F0C720EAF055695:0005F24FC5:D43639DCBBAC:-054OK+DISCE";
-		 do{
+		 unsigned char resp[300];//="OK+DISIOK+DISC:4C000215:74278BDAB64445208F0C720EAF059935:01011602C5:D43639DC103C:-054OK+DISC:4C000215:74278BDAB64445208F0C720EAF055695:0005F24FC5:D43639DCBBAC:-054OK+DISCE";
+		unsigned char*	ptr;
+			ptr=resp;
+
+		 for(i=0;i<300;i++)resp[i]=0;
+
+					i=0;
+
+
+		do{
 			 xQueueReceive(temp_queue,&resp[i++],portMAX_DELAY);
+
 		 }while(uxQueueMessagesWaiting(temp_queue));
 
-	/*	  char stryng[10][200];
-		char * wynik;
-		strcpy(stryng[0],resp);
+		ptr++;
 
-		int j=0;
-		while( (wynik=strstr( stryng[j++], "OK+DISC:"))!=NULL){
-			wynik+=8;
-			strcpy(stryng[j],wynik);
+		while( (ptr=strstr(ptr, "OK+DISC:"))!=NULL){
+				ptr+=8;
+
+				unsigned char  tmp[4]={0,};
+
+				uint8_t err=0;
+
+				uint8_t licz;
+				for ( licz=0;licz<8;licz++){
+					if(*ptr=='0')err++;
+					ptr++;
+				}
+				if(err>=8)continue;
+
+				ptr+=34;
+
+				strncpy (tmp, ptr,4 );
+				sens[sens_amount].id=(uint16_t)strtol(tmp, NULL, 16);
+				ptr+=4;
+
+				unsigned char  tmp2[4]={0,};
+				 strncpy (tmp2, ptr,2 );
+
+				 sens[sens_amount].pomiarC= (uint16_t)strtol(tmp2, NULL, 16);
+				 ptr+=2;
+
+				 strncpy (tmp2,ptr,2 );
+
+				 sens[sens_amount++].pomiarU= (uint16_t)strtol(tmp2, NULL, 16);
+
 		}
 
-		odczyt sens[2];
+		while(sens_amount--){
+			xQueueSend(sens_queue,&sens[sens_amount],portMAX_DELAY);
+		}
 
-		int p;
-
-		for( p=1;p<j;p++){
-
-
-			 char   ptr[80];
-			char  tmp1[4];
-			strcpy(ptr,stryng[p]);
-
-
-		 char *cptr=ptr;
-		 cptr+=42;
-		 strncpy (tmp1, cptr,4 );
-		 sens[p-1].id=(uint16_t)strtol(tmp1, NULL, 16);
-		 cptr+=4;
-
-		 unsigned char  tmp2[4]={0,};
-		 strncpy (tmp2, cptr,2 );
-
-		 sens[p-1].pomiarC= (uint16_t)strtol(tmp2, NULL, 16);
-		 cptr+=2;
-
-		 strncpy (tmp2,cptr,2 );
-
-		 sens[p-1].pomiarU= (uint16_t)strtol(tmp2, NULL, 16);
-		 cptr+=2;
-		}*/
-		 unsigned char  stryng[300];
-				 char * wynik;
-
-
-					odczyt sens;
-
-				wynik=strstr( &resp[1], "OK+DISC:");
-				wynik+=50;
-
-				 unsigned char  tmp1[4]={0,};
-				 strncpy (tmp1, wynik,4 );
-				 sens.id=(uint16_t)strtol(tmp1, NULL, 16);
-				 wynik+=4;
-
-				 unsigned char  tmp2[4]={0,};
-				 strncpy (tmp2, wynik,2 );
-
-				 sens.pomiarC= (uint16_t)strtol(tmp2, NULL, 16);
-				 wynik+=2;
-
-				 strncpy (tmp2,wynik,2 );
-
-				 sens.pomiarU= (uint16_t)strtol(tmp2, NULL, 16);
-
-
-
-
-		xQueueSend(sens_queue,&sens,portMAX_DELAY);
 		xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
 		vTaskDelay(4*configTICK_RATE_HZ);
 		UARTprintf("AT+DISI?");

@@ -754,6 +754,7 @@ void LCDTask(void)
 	LCD_Clear(BLACK);
 	LCD_DrawImage(0,0, 240,319, intro);
 
+	UARTprintf("AT");
 	UARTprintf("AT+DISI?");
 
 	while(1)
