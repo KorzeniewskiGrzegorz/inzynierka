@@ -374,6 +374,11 @@ void BLE_Query(char *s){
 
 
 }
+SensorIB sens[10];
+
+
+
+
 
 void UARTTask(void){
 
@@ -382,11 +387,13 @@ void UARTTask(void){
 
 		uint16_t i=0;
 		 uint8_t copy=0;
-		uint16_t j=0;
+		 uint16_t j=0;
+
 
 		unsigned char*	pcBuffer;
 		pcBuffer = pvPortMalloc(512);
-		 unsigned char scan_response[300]={0,};
+		unsigned char scan_response[300]={0,};
+
 
 
 		 for(i=0;i<80;i++)pcBuffer[i]=0;
@@ -410,7 +417,6 @@ void UARTTask(void){
 												{
 													while(j<8){
 														scan_response[j]=pcBuffer[j++];
-
 													}
 													copy=1;
 													vTaskDelay(3*configTICK_RATE_HZ);
@@ -418,10 +424,9 @@ void UARTTask(void){
 
 
 				if(copy){
-					scan_response[j++]=pcBuffer[i++]=UARTgetc();
-				}else
-					pcBuffer[i++]=UARTgetc();
-
+									scan_response[j++]=pcBuffer[i++]=UARTgetc();
+								}else
+				pcBuffer[i++]=UARTgetc();
 
 				if(i==20 || i==40){
 					pcBuffer[i]="\n";
@@ -433,11 +438,56 @@ void UARTTask(void){
 
 			if(copy)
 			{
-				uint16_t x;
-				for(x=0;x<j;x++)
-					xQueueSend(temp_queue,&scan_response[x],portMAX_DELAY);
 
-				xEventGroupSetBits(ButtonFlags, TEMPSCAN_FLAG);
+
+				uint8_t sens_amount=0;
+
+				//uint16_t i=0;
+				// unsigned char resp[300];//="OK+DISIOK+DISC:4C000215:74278BDAB64445208F0C720EAF059935[32]:01011602C5:D43639DC103C:-054OK+DISC:4C000215:74278BDAB64445208F0C720EAF055695:0005F24FC5:D43639DCBBAC:-054OK+DISCE";
+				unsigned char*	ptr;
+					ptr=&scan_response[0];
+
+
+					ptr++;
+
+				while( (ptr=strstr(ptr, "OK+DISC:"))!=NULL){
+						ptr+=8;
+					/*	unsigned char  w[300]={0,};
+						strcpy(w,ptr);*/
+
+						unsigned char  tmp[4]={0,};
+
+						uint8_t err=0;
+
+						uint8_t licz;
+						for ( licz=0;licz<8;licz++){
+							if(*ptr=='0')err++;
+							ptr++;
+						}
+						if(err>=8)continue;
+
+						ptr+=34;
+
+						strncpy (tmp, ptr,4 );
+						sens[sens_amount].id=(uint16_t)strtol(tmp, NULL, 16);
+						ptr+=4;
+
+						unsigned char  tmp2[4]={0,};
+						 strncpy (tmp2, ptr,2 );
+
+						 sens[sens_amount].pomiarC= (uint16_t)strtol(tmp2, NULL, 16);
+						 ptr+=2;
+
+						 strncpy (tmp2,ptr,2 );
+
+						 sens[sens_amount++].pomiarU= (uint16_t)strtol(tmp2, NULL, 16);
+
+						}
+
+						while(sens_amount--){
+							xQueueSend(sens_queue,&sens[sens_amount],portMAX_DELAY);
+							if(!sens_amount)xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
+						}
 
 			}
 
@@ -706,7 +756,7 @@ void Main_screen(void){
 
 				}else if(  s& TEMPDONE_FLAG ){
 
-					odczyt moj;
+					SensorIB moj;
 					xQueueReceive(sens_queue,&moj,portMAX_DELAY);
 					temp1=moj.pomiarC;
 					float f=(float)moj.pomiarU/100;

@@ -117,7 +117,7 @@ void TEMPTask(void){
 
 
 	while(1){
-		odczyt sens[10];
+	/*	odczyt sens[10];
 		uint8_t sens_amount=0;
 
 		xEventGroupWaitBits( ButtonFlags,TEMPSCAN_FLAG ,pdTRUE,pdFALSE,portMAX_DELAY );
@@ -173,10 +173,11 @@ void TEMPTask(void){
 
 		while(sens_amount--){
 			xQueueSend(sens_queue,&sens[sens_amount],portMAX_DELAY);
+			if(!sens_amount)xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
 		}
+*/
 
-		xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
-		vTaskDelay(4*configTICK_RATE_HZ);
+		vTaskDelay(10*configTICK_RATE_HZ);
 		UARTprintf("AT+DISI?");
 	}
 }
@@ -251,7 +252,7 @@ int main(void){
 	if(NULL==temp_queue)
 			while(1);
 
-	sens_queue=xQueueCreate(5,sizeof(odczyt));
+	sens_queue=xQueueCreate(5,sizeof(SensorIB));
 		if(NULL==sens_queue)
 				while(1);
 
