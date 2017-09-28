@@ -1,3 +1,4 @@
+
 /*
  * LCD_task.c
  *
@@ -376,7 +377,59 @@ void BLE_Query(char *s){
 }
 SensorIB sens[10];
 
+void UUID_parsing(unsigned char * ptr)
+{
+	uint8_t sens_amount=0;
+	ptr++;
 
+		while( (ptr=strstr(ptr, "OK+DISC:"))!=NULL){
+				ptr+=8;
+				ptr+=9;
+
+				unsigned char  tmp12[12]={0,};
+				unsigned char  tmp4[4]={0,};
+				unsigned char  tmp2[2]={0,};
+
+
+
+				if(*ptr++=='1')
+					if(*ptr++=='2')
+						if(*ptr++=='3')
+							if(*ptr++=='4')
+								if(*ptr++=='5')
+									if(*ptr++=='6')
+										if(*ptr++=='7')
+											if(*ptr++=='8'){
+												//ptr+=34;
+
+												strncpy (tmp4, ptr,4 );
+												sens[sens_amount].typ=(uint16_t)strtol(tmp4, NULL, 16);
+
+												ptr+=12;
+												strncpy (tmp12, ptr,12 );
+												sens[sens_amount].id=(uint16_t)strtol(tmp12, NULL, 16);
+												ptr+=17;
+
+
+												 strncpy (tmp2, ptr,2 );
+
+												 sens[sens_amount].pomiarC= (uint16_t)strtol(tmp2, NULL, 16);
+												 ptr+=2;
+
+												 strncpy (tmp2,ptr,2 );
+
+												 sens[sens_amount++].pomiarU= (uint16_t)strtol(tmp2, NULL, 16);
+
+												}
+
+
+				}
+
+		while(sens_amount--){
+				xQueueSend(sens_queue,&sens[sens_amount],portMAX_DELAY);
+				if(!sens_amount)xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
+			}
+}
 
 
 
@@ -392,7 +445,7 @@ void UARTTask(void){
 
 		unsigned char*	pcBuffer;
 		pcBuffer = pvPortMalloc(512);
-		unsigned char scan_response[300]={0,};
+		//unsigned char scan_response[300]={0,};
 
 
 
@@ -415,79 +468,30 @@ void UARTTask(void){
 											if(pcBuffer[6]=='I')
 												if(pcBuffer[7]=='S')
 												{
-													while(j<8){
-														scan_response[j]=pcBuffer[j++];
-													}
+													//while(j<8){
+													//	scan_response[j]=pcBuffer[j++];
+													//}
 													copy=1;
 													vTaskDelay(3*configTICK_RATE_HZ);
 												}
 
 
-				if(copy){
-									scan_response[j++]=pcBuffer[i++]=UARTgetc();
-								}else
+				//if(copy){
+				//					scan_response[j++]=pcBuffer[i++]=UARTgetc();
+				//				}else
 				pcBuffer[i++]=UARTgetc();
 
-				if(i==20 || i==40){
-					pcBuffer[i]="\n";
-				i+=2;
+				//if(i==20 || i==40){
+				//	pcBuffer[i]="\n";
+				//i+=2;
 
-				}
+				//}
 			}
 
 
 			if(copy)
 			{
-
-
-				uint8_t sens_amount=0;
-
-				//uint16_t i=0;
-				// unsigned char resp[300];//="OK+DISIOK+DISC:4C000215:74278BDAB64445208F0C720EAF059935[32]:01011602C5:D43639DC103C:-054OK+DISC:4C000215:74278BDAB64445208F0C720EAF055695:0005F24FC5:D43639DCBBAC:-054OK+DISCE";
-				unsigned char*	ptr;
-					ptr=&scan_response[0];
-
-
-					ptr++;
-
-				while( (ptr=strstr(ptr, "OK+DISC:"))!=NULL){
-						ptr+=8;
-					/*	unsigned char  w[300]={0,};
-						strcpy(w,ptr);*/
-
-						unsigned char  tmp[4]={0,};
-
-						uint8_t err=0;
-
-						uint8_t licz;
-						for ( licz=0;licz<8;licz++){
-							if(*ptr=='0')err++;
-							ptr++;
-						}
-						if(err>=8)continue;
-
-						ptr+=34;
-
-						strncpy (tmp, ptr,4 );
-						sens[sens_amount].id=(uint16_t)strtol(tmp, NULL, 16);
-						ptr+=4;
-
-						unsigned char  tmp2[4]={0,};
-						 strncpy (tmp2, ptr,2 );
-
-						 sens[sens_amount].pomiarC= (uint16_t)strtol(tmp2, NULL, 16);
-						 ptr+=2;
-
-						 strncpy (tmp2,ptr,2 );
-
-						 sens[sens_amount++].pomiarU= (uint16_t)strtol(tmp2, NULL, 16);
-
-						}
-
-						while(sens_amount--){
-							xQueueSend(sens_queue,&sens[sens_amount],portMAX_DELAY);
-							if(!sens_amount)xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
-						}
+				UUID_parsing(&pcBuffer[0]);
 
 			}
 
@@ -497,7 +501,7 @@ void UARTTask(void){
 
 
 				LCD_Fill(30,280,210,310,0x02C0);
-				LCD_ShowString(50,290,pcBuffer);
+				//LCD_ShowString(50,290,pcBuffer);
 
 			}
 
@@ -820,3 +824,4 @@ void LCDTask(void)
 
 
 }
+

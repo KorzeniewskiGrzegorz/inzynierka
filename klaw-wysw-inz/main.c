@@ -248,9 +248,7 @@ int main(void){
 
 
 
-	temp_queue=xQueueCreate(300,sizeof(unsigned char));
-	if(NULL==temp_queue)
-			while(1);
+
 
 	sens_queue=xQueueCreate(5,sizeof(SensorIB));
 		if(NULL==sens_queue)
@@ -261,7 +259,7 @@ int main(void){
 		while(1);
 	}
 
-	if((xTaskCreate(TEMPTask, (portCHAR *)"temp", 2048,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
+	if((xTaskCreate(TEMPTask, (portCHAR *)"temp", 512,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
 	{
 		while(1);
 	}
