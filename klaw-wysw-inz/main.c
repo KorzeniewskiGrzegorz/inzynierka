@@ -114,71 +114,13 @@ void vApplicationMallocFailedHook (void)
 
 void TEMPTask(void){
 
-
-
 	while(1){
-	/*	odczyt sens[10];
-		uint8_t sens_amount=0;
-
-		xEventGroupWaitBits( ButtonFlags,TEMPSCAN_FLAG ,pdTRUE,pdFALSE,portMAX_DELAY );
-
-		uint16_t i=0;
-		 unsigned char resp[300];//="OK+DISIOK+DISC:4C000215:74278BDAB64445208F0C720EAF059935:01011602C5:D43639DC103C:-054OK+DISC:4C000215:74278BDAB64445208F0C720EAF055695:0005F24FC5:D43639DCBBAC:-054OK+DISCE";
-		unsigned char*	ptr;
-			ptr=resp;
-
-		 for(i=0;i<300;i++)resp[i]=0;
-
-					i=0;
 
 
-		do{
-			 xQueueReceive(temp_queue,&resp[i++],portMAX_DELAY);
-
-		 }while(uxQueueMessagesWaiting(temp_queue));
-
-		ptr++;
-
-		while( (ptr=strstr(ptr, "OK+DISC:"))!=NULL){
-				ptr+=8;
-
-				unsigned char  tmp[4]={0,};
-
-				uint8_t err=0;
-
-				uint8_t licz;
-				for ( licz=0;licz<8;licz++){
-					if(*ptr=='0')err++;
-					ptr++;
-				}
-				if(err>=8)continue;
-
-				ptr+=34;
-
-				strncpy (tmp, ptr,4 );
-				sens[sens_amount].id=(uint16_t)strtol(tmp, NULL, 16);
-				ptr+=4;
-
-				unsigned char  tmp2[4]={0,};
-				 strncpy (tmp2, ptr,2 );
-
-				 sens[sens_amount].pomiarC= (uint16_t)strtol(tmp2, NULL, 16);
-				 ptr+=2;
-
-				 strncpy (tmp2,ptr,2 );
-
-				 sens[sens_amount++].pomiarU= (uint16_t)strtol(tmp2, NULL, 16);
-
-		}
-
-		while(sens_amount--){
-			xQueueSend(sens_queue,&sens[sens_amount],portMAX_DELAY);
-			if(!sens_amount)xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
-		}
-*/
-
-		vTaskDelay(10*configTICK_RATE_HZ);
+	//	xSemaphoreTake(  semaphore_scan, 15*configTICK_RATE_HZ) ;
 		UARTprintf("AT+DISI?");
+		vTaskDelay(30*configTICK_RATE_HZ);
+
 	}
 }
 
@@ -241,6 +183,12 @@ int main(void){
 		while(1);
 	}
 
+	semaphore_scan=  xSemaphoreCreateMutex();
+	if(semaphore_scan==NULL)
+	{
+		while(1);
+	}
+
 	if((xTaskCreate(LCDTask, (portCHAR *)"LCD", 1024,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
 	{
 		while(1);
@@ -253,6 +201,14 @@ int main(void){
 	sens_queue=xQueueCreate(5,sizeof(SensorIB));
 		if(NULL==sens_queue)
 				while(1);
+
+		address_n_queue=xQueueCreate(1,sizeof(uint8_t)); // do przesylania ilosci adresow
+						if(NULL==address_n_queue)
+								while(1);
+
+		address_queue=xQueueCreate(10,sizeof(Address));// do przesylania znalezionych adresow
+				if(NULL==address_queue)
+						while(1);
 
 	if((xTaskCreate(UARTTask, (portCHAR *)"UARTbt", 512,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
 	{

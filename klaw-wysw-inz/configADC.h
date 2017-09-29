@@ -42,13 +42,19 @@
 
 #define UARTbt_FLAG 0x0100
 #define TEMPDONE_FLAG 0x0200
+#define TEMPSCAN_FLAG 0x0400
+#define ADD_PARS_FLAG 0x0800
 
 #define ALL_BUTTON 0x1f
 #define ALL_SENSOR 0xff00
 
  EventGroupHandle_t ButtonFlags;
- QueueHandle_t  temp_queue;
+ QueueHandle_t  address_queue;
+ QueueHandle_t  address_n_queue;
  QueueHandle_t  sens_queue;
+
+ xSemaphoreHandle semaphore_scan;
+
  typedef struct {
 	uint16_t typ;
  	uint16_t id;
@@ -58,6 +64,16 @@
 
  }SensorIB;
 
+ typedef struct {
+	uint8_t con_state;
+	unsigned char address[12];
+
+ }Remote;
+
+ typedef struct {
+	unsigned char address[12];
+
+ }Address;
 
 
 void Joystick_init(void);
