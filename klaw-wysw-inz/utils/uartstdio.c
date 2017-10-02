@@ -1457,12 +1457,23 @@ void UARTStdioIntHandler(void)
 			// there, otherwise throw it away.
 			//
 
+			uint16_t kirwa=uxQueueMessagesWaitingFromISR(xRxedChars);
 
 			xQueueSendFromISR(xRxedChars,&cChar,&xHigherPriorityTaskWoken);
 
 		}
-		portBASE_TYPE higherPriorityTaskWoken=pdFALSE;
-		xEventGroupSetBitsFromISR(ButtonFlags, UARTbt_FLAG, &higherPriorityTaskWoken );
+
+		BaseType_t  xResult;
+		xResult = xEventGroupSetBitsFromISR(ButtonFlags, UARTbt_FLAG, &xHigherPriorityTaskWoken );
+
+
+		  /* Was the message posted successfully? */
+		  if( xResult == pdFAIL )
+		  {
+
+			  uint8_t kurwa=0;
+			  kurwa++;
+		  }
 	}
 
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );

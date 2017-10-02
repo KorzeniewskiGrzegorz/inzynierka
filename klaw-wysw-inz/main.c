@@ -189,7 +189,7 @@ int main(void){
 		while(1);
 	}
 
-	if((xTaskCreate(LCDTask, (portCHAR *)"LCD", 1024,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
+	if((xTaskCreate(LCDTask, (portCHAR *)"LCD", 2048,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
 	{
 		while(1);
 	}
@@ -210,7 +210,7 @@ int main(void){
 				if(NULL==address_queue)
 						while(1);
 
-	if((xTaskCreate(UARTTask, (portCHAR *)"UARTbt", 512,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
+	if((xTaskCreate(UARTTask, (portCHAR *)"UARTbt", 1024,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
 	{
 		while(1);
 	}

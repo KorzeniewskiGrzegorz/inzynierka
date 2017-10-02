@@ -629,10 +629,13 @@ void LCD_ShowString(u16 x,u16 y,const u8 *p) // CONVERTED TO CCS
 void	TivaLCDInit(void)
 {
 	    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE); // PE4 = D/C' , PE5 = RESET
+	    SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_GPIOE);
 	    //SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOF); // LEDs for debugging only, not requierd in final
 	    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);// SSI pins
+	    SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_GPIOA);
 	    SysCtlDelay(SysCtlClockGet()/10);// 100mS delay
 	    SysCtlPeripheralEnable(SYSCTL_PERIPH_SSI0);
+	    SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_SSI0);
 
 //	    never_declared = 35qr;
 

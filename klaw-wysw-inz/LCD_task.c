@@ -395,10 +395,12 @@ void UUID_parsing(unsigned char * ptr)
 
 				unsigned char * w1;
 				unsigned char * w2;
+				unsigned char * w3;
 				w1=strstr(ptr,"12345678");
 				w2=strstr(ptr,"OK+DISC:");
+				w3=strstr(ptr,"OK+DISCE");
 
-				if(w1<w2 || w2==NULL ){
+				if((w1<w2 || w2==NULL) && w1!=NULL && w1<w3){
 					w1+=8;
 
 						strncpy (tmp4, w1,4 );
@@ -430,7 +432,7 @@ void UUID_parsing(unsigned char * ptr)
 
 			}
 
-		xSemaphoreGive(  semaphore_scan) ;
+		//xSemaphoreGive(  semaphore_scan) ;
 }
 
 void address_parsing(unsigned char * ptr){
@@ -466,6 +468,7 @@ void UARTTask(void){
 
 	while(1){
 		xEventGroupWaitBits( ButtonFlags,UARTbt_FLAG ,pdTRUE,pdFALSE,portMAX_DELAY );
+
 
 		uint16_t i=0;
 
@@ -561,15 +564,15 @@ void zarzadzaj_add(uint8_t num)
 
 		uint16_t old_opt=opt;
 
-		EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON  ,pdTRUE,pdFALSE,portMAX_DELAY );
+		EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON  ,pdFALSE,pdFALSE,portMAX_DELAY );
 
 		if(  s& UP_BUTTON ){
-
+			xEventGroupClearBits(ButtonFlags,UP_BUTTON);
 			if(opt<=0)opt=0;
 				else opt--;
 
 		}else if(  s& DOWN_BUTTON ){
-
+			 xEventGroupClearBits(ButtonFlags,DOWN_BUTTON);
 			if(opt>=opt_num-1)opt=opt_num-1;
 					else opt++;
 
@@ -582,6 +585,8 @@ void zarzadzaj_add(uint8_t num)
 
 		}
 		else if(  s& OK_BUTTON ){
+
+			 xEventGroupClearBits(ButtonFlags,OK_BUTTON);
 
 			if(opt==num)exit=1;
 			else{
@@ -632,14 +637,16 @@ void Wysw_szukaj(void){
 
 				uint16_t old_opt=opt;
 
-				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON | ADD_PARS_FLAG ,pdTRUE,pdFALSE,portMAX_DELAY );
+				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON | ADD_PARS_FLAG ,pdFALSE,pdFALSE,portMAX_DELAY );
 
 				if(  s& UP_BUTTON ){
+					 xEventGroupClearBits(ButtonFlags,UP_BUTTON);
 
 					if(opt<=0)opt=0;
 						else opt--;
 
 				}else if(  s& DOWN_BUTTON ){
+					 xEventGroupClearBits(ButtonFlags,DOWN_BUTTON);
 
 					if(opt>=opt_num-1)opt=opt_num-1;
 							else opt++;
@@ -653,6 +660,7 @@ void Wysw_szukaj(void){
 
 				}
 				else if(  s& ADD_PARS_FLAG ){
+					 xEventGroupClearBits(ButtonFlags,ADD_PARS_FLAG);
 
 						uint8_t num=0;
 					xQueueReceive(address_n_queue,&num,portMAX_DELAY);
@@ -667,10 +675,11 @@ void Wysw_szukaj(void){
 					}
 				}
 				else if(  s& OK_BUTTON ){
+					 xEventGroupClearBits(ButtonFlags,OK_BUTTON);
 
 					switch(opt){
 					case 0:
-						xSemaphoreTake(  semaphore_scan, portMAX_DELAY) ;
+						//xSemaphoreTake(  semaphore_scan, portMAX_DELAY) ;
 						BLE_Query("AT+DISC?");
 
 
@@ -729,18 +738,22 @@ void Main_screen(void){
 
 
 
-				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON | ALL_SENSOR ,pdTRUE,pdFALSE,portMAX_DELAY );
+				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON | ALL_SENSOR ,pdFALSE,pdFALSE,portMAX_DELAY );
 
 
 			 if(  s& UP_BUTTON ){
-
+				 xEventGroupClearBits(ButtonFlags,UP_BUTTON);
 					if(opt<=0)opt=0;
 						else opt--;
 
+
+
 				}else if(  s& DOWN_BUTTON ){
+					xEventGroupClearBits(ButtonFlags,DOWN_BUTTON);
 
 					if(opt>=opt_num-1)opt=opt_num-1;
 							else opt++;
+
 
 				}else if(  s& LEFT_BUTTON ){
 
@@ -751,6 +764,8 @@ void Main_screen(void){
 
 				}else if(  s& TEMPDONE_FLAG ){
 
+					xEventGroupClearBits(ButtonFlags,TEMPDONE_FLAG);
+
 					SensorIB moj;
 					xQueueReceive(sens_queue,&moj,portMAX_DELAY);
 					temp1=moj.pomiarC;
@@ -758,7 +773,11 @@ void Main_screen(void){
 					temp1+=f;
 					ch=1;
 
+
+
 				}else if(  s& OK_BUTTON ){
+
+					xEventGroupClearBits(ButtonFlags,OK_BUTTON);
 
 					switch(opt){
 					case 0:UARTprintf("AT+DISI?");	break;
@@ -826,14 +845,14 @@ void Main_screen(void){
 
 void LCDTask(void)
 {
-	xEventGroupClearBits(ButtonFlags,ALL_BUTTON);
+
 
 
 	LCD_Clear(BLACK);
 	LCD_DrawImage(0,0, 240,319, intro);
 
 	UARTprintf("AT");
-	UARTprintf("AT+DISI?");
+
 
 	while(1)
 	{

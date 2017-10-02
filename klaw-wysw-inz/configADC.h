@@ -42,7 +42,7 @@
 
 #define UARTbt_FLAG 0x0100
 #define TEMPDONE_FLAG 0x0200
-#define TEMPSCAN_FLAG 0x0400
+//#define TEMPSCAN_FLAG 0x0400
 #define ADD_PARS_FLAG 0x0800
 
 #define ALL_BUTTON 0x1f
