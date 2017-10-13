@@ -48,8 +48,8 @@ unsigned int BACK_COLOR, POINT_COLOR;
 
 uint32_t g_ui32CPUUsage;
 uint32_t g_ulSystemClock;
-
-
+ SensorIB sens[10];
+ Remote remote_ble[10];
 
 
 //*****************************************************************************
@@ -115,14 +115,166 @@ void vApplicationMallocFailedHook (void)
 void TEMPTask(void){
 
 	while(1){
-
-
-	//	xSemaphoreTake(  semaphore_scan, 15*configTICK_RATE_HZ) ;
 		UARTprintf("AT+DISI?");
-		vTaskDelay(30*configTICK_RATE_HZ);
+		vTaskDelay(10*configTICK_RATE_HZ);
 
+					//
+	/*	unsigned char cThisChar;
+		  do
+		    {
+		        //
+		        // Read a character using the blocking read function.  This function
+		        // will not return until a character is available.
+		        //
+		        cThisChar = UARTCharGet(UART0_BASE);
+
+		        //
+		        // Write the same character using the blocking write function.  This
+		        // function will not return until there was space in the FIFO and
+		        // the character is written.
+		        //
+		        UARTCharPut(UART0_BASE, cThisChar);
+		    }
+		    while((cThisChar != '\n') && (cThisChar != '\r'));*/
 	}
 }
+
+
+
+
+void UUID_parsing(unsigned char * ptr)
+{
+	uint8_t sens_amount=0;
+	ptr++;
+	//SensorIB sens[10];
+		while( (ptr=strstr(ptr, "OK+DISC:"))!=NULL){
+
+				ptr+=17;
+
+				unsigned char  tmp12[12]={0,};
+				unsigned char  tmp4[4]={0,};
+				unsigned char  tmp2[2]={0,};
+
+
+				unsigned char * w1;
+				unsigned char * w2;
+				unsigned char * w3;
+				w1=strstr(ptr,"12345678");
+				w2=strstr(ptr,"OK+DISC:");
+				w3=strstr(ptr,"OK+DISCE");
+
+				if((w1<w2 || w2==NULL) && w1!=NULL && w1<w3){
+					w1+=8;
+
+						strncpy (tmp4, w1,4 );
+						sens[sens_amount].typ=(uint16_t)strtol(tmp4, NULL, 16);
+
+						w1+=12;
+						strncpy (tmp12, w1,12 );
+						sens[sens_amount].id=(uint16_t)strtol(tmp12, NULL, 16);
+						w1+=17;
+
+
+						 strncpy (tmp2, w1,2 );
+
+						 sens[sens_amount].pomiarC= (uint16_t)strtol(tmp2, NULL, 16);
+						 w1+=2;
+
+						 strncpy (tmp2,w1,2 );
+
+						 sens[sens_amount++].pomiarU= (uint16_t)strtol(tmp2, NULL, 16);
+
+						}
+
+
+				}
+		xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
+
+		//xQueueOverwrite(sens_n_queue,&sens_amount);
+		//xQueueReset(sens_queue);
+	/*	while(sens_amount--){
+				xQueueSend(sens_queue,&sens[sens_amount],portMAX_DELAY);
+				if(!sens_amount)xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
+
+			}*/
+
+		//xSemaphoreGive(  semaphore_scan) ;
+}
+
+void address_parsing(unsigned char * ptr){
+
+	uint8_t num=0;
+	ptr+=8;
+	//Remote remote_ble[10];
+
+	//xQueueReset(address_queue);
+	while( (ptr=strstr(ptr, "OK+DIS"))!=NULL){
+
+		if(ptr == strstr(ptr, "OK+DISCE")){
+
+			ptr +=5;
+			continue;
+		}
+		Address a;
+		ptr+=8;
+		strncpy(a.address,ptr,12);
+		ptr+=10;
+
+	//	xQueueSend(address_queue,&a,portMAX_DELAY);
+		num++;
+
+	}
+
+	//xQueueOverwrite(address_n_queue,&num);
+
+	xEventGroupSetBits(ButtonFlags, ADD_PARS_FLAG);
+//	xSemaphoreGive(  semaphore_scan) ;
+}
+
+void ParserTask(void)
+{
+	while(1){
+		Response str;
+		xQueueReceive(response_queue,str.s,portMAX_DELAY);
+
+		UARTCharPut(UART0_BASE,'|');
+		UARTCharPut(UART0_BASE,'|');
+		UARTCharPut(UART0_BASE,'|');
+		UARTCharPut(UART0_BASE,'|');
+		UARTCharPut(UART0_BASE,'|');
+		UARTCharPut(UART0_BASE,'|');
+		UARTCharPut(UART0_BASE,'\n');
+
+		unsigned char * pcBuffer=str.s;
+
+		unsigned char * wynik, * wynik2, * wynik3;
+
+					wynik=strstr(pcBuffer, "OK+DISIS");
+
+					if(wynik!=NULL){
+						UUID_parsing(wynik);
+					}
+
+					wynik2=strstr(pcBuffer, "OK+DISCS");
+					if(wynik2!=NULL ){
+
+						address_parsing(wynik2);
+					}
+
+
+
+					/*wynik3=strstr(pcBuffer, "OK+DISCE");
+					if(strstr(wynik3, "OK+DISIS")==NULL && strstr(wynik3, "OK+DISC")!=NULL){ // w [rzypadku gdy po skanie beacon jest jeszcze cos w buferze
+						address_parsing(wynik3);
+					}*/
+
+
+
+
+	}
+
+}
+
 
 //*****************************************************************************
 //
@@ -152,10 +304,27 @@ int main(void){
 	CPUUsageInit(g_ulSystemClock, configTICK_RATE_HZ/10, 3);
 
 
+	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
+		ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+		ROM_GPIOPinConfigure(GPIO_PA0_U0RX);
+		ROM_GPIOPinConfigure(GPIO_PA1_U0TX);
+		ROM_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+		 UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 115200,
+		                        (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+		                         UART_CONFIG_PAR_NONE));
 
+		ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_UART0);	//La UART tiene que seguir funcionando aunque el micro este dormido
+		ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_GPIOA);	//La UART tiene que seguir funcionando aunque el micro este dormido
 
+		UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
+			IntEnable(INT_UART0);
+
+			//
+			// Enable the UART operation.
+			//
+			UARTEnable(UART0_BASE);
 	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART1);
-		ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
+	ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOB);
 		ROM_GPIOPinConfigure(GPIO_PB0_U1RX);
 		ROM_GPIOPinConfigure(GPIO_PB1_U1TX);
 		ROM_GPIOPinTypeUART(GPIO_PORTB_BASE, GPIO_PIN_0 | GPIO_PIN_1);
@@ -164,7 +333,22 @@ int main(void){
 		ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_UART1);	//La UART tiene que seguir funcionando aunque el micro este dormido
 			ROM_SysCtlPeripheralSleepEnable(SYSCTL_PERIPH_GPIOB);
 
-			//UARTLoopbackEnable(UART1_BASE);
+			//UARTLoopbackEnable(UART0_BASE);
+
+
+
+	int i;
+	for(i=0;i<10;i++){
+		sens[i].id=0xFFFF;
+		sens[i].pomiarC=0xFFFF;
+		sens[i].pomiarU=0xFFFF;
+		sens[i].typ=0xFFFF;
+
+		strcpy(remote_ble[i].address,"BRAK");
+		remote_ble[i].con_state=0xff;
+
+	}
+
 
 
 
@@ -189,18 +373,25 @@ int main(void){
 		while(1);
 	}
 
-	if((xTaskCreate(LCDTask, (portCHAR *)"LCD", 2048,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
+	if((xTaskCreate(LCDTask, (portCHAR *)"LCD", 1024,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
 	{
 		while(1);
 	}
 
 
 
+	response_queue=xQueueCreate(1,sizeof(Response));
+			if(NULL==response_queue)
+					while(1);
 
 
 	sens_queue=xQueueCreate(5,sizeof(SensorIB));
 		if(NULL==sens_queue)
 				while(1);
+
+		sens_n_queue=xQueueCreate(1,sizeof(uint8_t));
+				if(NULL==sens_n_queue)
+						while(1);
 
 		address_n_queue=xQueueCreate(1,sizeof(uint8_t)); // do przesylania ilosci adresow
 						if(NULL==address_n_queue)
@@ -215,7 +406,12 @@ int main(void){
 		while(1);
 	}
 
-	if((xTaskCreate(TEMPTask, (portCHAR *)"temp", 512,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
+	if((xTaskCreate(ParserTask, (portCHAR *)"Parser", 1024,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
+		{
+			while(1);
+		}
+
+	if((xTaskCreate(TEMPTask, (portCHAR *)"temp", 128,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
 	{
 		while(1);
 	}

@@ -231,8 +231,8 @@ UARTStdioConfig(uint32_t ui32PortNum, uint32_t ui32Baud, uint32_t ui32SrcClock)
 	// Enable the UART peripheral for use.
 	//
 
-	MAP_SysCtlPeripheralEnable(g_ui32UARTPeriph[ui32PortNum]);
-	MAP_SysCtlPeripheralSleepEnable(g_ui32UARTPeriph[ui32PortNum]);
+	//MAP_SysCtlPeripheralEnable(g_ui32UARTPeriph[ui32PortNum]);
+	//MAP_SysCtlPeripheralSleepEnable(g_ui32UARTPeriph[ui32PortNum]);
 
 	//
 	// Configure the UART for 115200, n, 8, 1
@@ -1268,7 +1268,7 @@ UARTprintf(const char *pcString, ...)
 int
 UARTRxBytesAvail(void)
 {
-	return((uxQueueMessagesWaiting(xRxedChars)));
+	return((uxQueueMessagesWaitingFromISR(xRxedChars)));
 }
 
 
@@ -1441,6 +1441,7 @@ void UARTStdioIntHandler(void)
 	//
 	if(ui32Ints & (UART_INT_RX | UART_INT_RT))
 	{
+
 		//
 		// Get all the available characters from the UART.
 		//
@@ -1457,23 +1458,12 @@ void UARTStdioIntHandler(void)
 			// there, otherwise throw it away.
 			//
 
-			uint16_t kirwa=uxQueueMessagesWaitingFromISR(xRxedChars);
+			//uint16_t kirwa=uxQueueMessagesWaitingFromISR(xRxedChars);
 
 			xQueueSendFromISR(xRxedChars,&cChar,&xHigherPriorityTaskWoken);
 
 		}
-
-		BaseType_t  xResult;
-		xResult = xEventGroupSetBitsFromISR(ButtonFlags, UARTbt_FLAG, &xHigherPriorityTaskWoken );
-
-
-		  /* Was the message posted successfully? */
-		  if( xResult == pdFAIL )
-		  {
-
-			  uint8_t kurwa=0;
-			  kurwa++;
-		  }
+		xEventGroupSetBitsFromISR(ButtonFlags, UARTbt_FLAG, &xHigherPriorityTaskWoken );
 	}
 
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );

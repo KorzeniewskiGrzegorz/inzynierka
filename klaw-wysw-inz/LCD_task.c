@@ -366,7 +366,8 @@ void Draw_Pointer(uint8_t opt,uint8_t old_opt){
 	LCD_ShowChar(20,y,'*',1);
 
 }
-
+extern SensorIB sens[10];
+extern Remote remote_ble[10];
 
 void BLE_Query(char *s){
 
@@ -376,120 +377,51 @@ void BLE_Query(char *s){
 
 
 }
-SensorIB sens[10];
-Remote remote_ble[10];
-
-void UUID_parsing(unsigned char * ptr)
-{
-	uint8_t sens_amount=0;
-	ptr++;
-
-		while( (ptr=strstr(ptr, "OK+DISC:"))!=NULL){
-
-				ptr+=17;
-
-				unsigned char  tmp12[12]={0,};
-				unsigned char  tmp4[4]={0,};
-				unsigned char  tmp2[2]={0,};
-
-
-				unsigned char * w1;
-				unsigned char * w2;
-				unsigned char * w3;
-				w1=strstr(ptr,"12345678");
-				w2=strstr(ptr,"OK+DISC:");
-				w3=strstr(ptr,"OK+DISCE");
-
-				if((w1<w2 || w2==NULL) && w1!=NULL && w1<w3){
-					w1+=8;
-
-						strncpy (tmp4, w1,4 );
-						sens[sens_amount].typ=(uint16_t)strtol(tmp4, NULL, 16);
-
-						w1+=12;
-						strncpy (tmp12, w1,12 );
-						sens[sens_amount].id=(uint16_t)strtol(tmp12, NULL, 16);
-						w1+=17;
-
-
-						 strncpy (tmp2, w1,2 );
-
-						 sens[sens_amount].pomiarC= (uint16_t)strtol(tmp2, NULL, 16);
-						 w1+=2;
-
-						 strncpy (tmp2,w1,2 );
-
-						 sens[sens_amount++].pomiarU= (uint16_t)strtol(tmp2, NULL, 16);
-
-						}
-
-
-				}
-
-		while(sens_amount--){
-				xQueueSend(sens_queue,&sens[sens_amount],portMAX_DELAY);
-				if(!sens_amount)xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
-
-			}
-
-		//xSemaphoreGive(  semaphore_scan) ;
-}
-
-void address_parsing(unsigned char * ptr){
-
-	uint8_t num=0;
-	ptr+=8;
-
-	while( (ptr=strstr(ptr, "OK+DIS"))!=NULL){
-
-		if(ptr == strstr(ptr, "OK+DISCE")){
-
-			ptr +=5;
-			continue;
-		}
-		Address a;
-		ptr+=8;
-		strncpy(a.address,ptr,12);
-		ptr+=10;
-
-		xQueueSend(address_queue,&a,portMAX_DELAY);
-		num++;
-
-	}
-
-	xQueueSend(address_n_queue,&num,portMAX_DELAY);
-
-	xEventGroupSetBits(ButtonFlags, ADD_PARS_FLAG);
-//	xSemaphoreGive(  semaphore_scan) ;
-}
-
 
 void UARTTask(void){
 
 	while(1){
 		xEventGroupWaitBits( ButtonFlags,UARTbt_FLAG ,pdTRUE,pdFALSE,portMAX_DELAY );
-
+		//vTaskDelay(4*configTICK_RATE_HZ);//
 
 		uint16_t i=0;
+		 portTickType  xTimeBefore, xTotalTimeSuspended;
 
-		unsigned char*	pcBuffer;
-		pcBuffer = pvPortMalloc(512);
+		//unsigned char*	pcBuffer;
+		//pcBuffer = pvPortMalloc(512);
+		 unsigned char	pcBuffer[800]={0,};
 
-		 for(i=0;i<80;i++)pcBuffer[i]=0;
+		 //for(i=0;i<511;i++)pcBuffer[i]=0;
 
-			i=0;
-
-			vTaskDelay(4*configTICK_RATE_HZ);
-
-			while(UARTRxBytesAvail() )
-			{
+		//	i=0;
 
 
-				pcBuffer[i++]=UARTgetc();
+			xTimeBefore = xTaskGetTickCount();
 
-			}
+			do{
 
-			unsigned char * wynik, * wynik2, * wynik3;
+
+				while(UARTRxBytesAvail()){
+					UARTCharPut(UART0_BASE,pcBuffer[i++]=UARTgetc());
+				}
+
+				xTotalTimeSuspended = xTaskGetTickCount() - xTimeBefore;
+
+			}while(xTotalTimeSuspended < 4* configTICK_RATE_HZ);
+
+		xQueueOverwrite( response_queue,pcBuffer );
+			//xQueueSend(response_queue,pcBuffer,portMAX_DELAY);
+
+
+			UARTCharPut(UART0_BASE,'\n');
+			UARTCharPut(UART0_BASE,'\r');
+			//UARTFlushRx();
+
+			//unsigned char	k[500]={0,};
+			//strcpy(k,pcBuffer);
+
+			//UARTFlushRx();
+			/*unsigned char * wynik, * wynik2, * wynik3;
 
 			wynik=strstr(pcBuffer, "OK+DISIS");
 
@@ -506,20 +438,20 @@ void UARTTask(void){
 
 
 			wynik3=strstr(pcBuffer, "OK+DISCE");
-			/*if(strstr(wynik3, "OK+DISIS")==NULL && strstr(wynik3, "OK+DISC")!=NULL){ // w [rzypadku gdy po skanie beacon jest jeszcze cos w buferze
+			if(strstr(wynik3, "OK+DISIS")==NULL && strstr(wynik3, "OK+DISC")!=NULL){ // w [rzypadku gdy po skanie beacon jest jeszcze cos w buferze
 				address_parsing(wynik3);
-			}*/
+			}
+*/
 
-
-			if(pcBuffer[0]!=0){
+			/*if(pcBuffer[0]!=0){
 
 
 				LCD_Fill(30,280,210,310,0x02C0);
 				//LCD_ShowString(50,290,pcBuffer);
 
-			}
+			}*/
 		//	xSemaphoreGive(  semaphore_scan) ;
-	 vPortFree(pcBuffer);
+	 //vPortFree(pcBuffer);
 	}
 
 }
@@ -534,12 +466,12 @@ void zarzadzaj_add(uint8_t num)
 
 	 uint8_t opt=0;
 
-
+/*
 	Address add[10];
 	int ik=0;
 	for(ik=0;ik<num;ik++){
 		xQueueReceive(address_queue,&add[ik],portMAX_DELAY);
-	}
+	}*/
 
 
 	do{
@@ -548,11 +480,16 @@ void zarzadzaj_add(uint8_t num)
 			LCD_Clear(BLACK);
 			LCD_ShowString(20,5,"---- wyszukane adresy ----");
 
+			int ik;
 			for(ik=0;ik<num;ik++){
+
+				if(strstr(remote_ble[ik].address,"BRAK")==NULL){
 					unsigned char buffer[80];
-					sprintf(buffer,"%d add: %s",ik,&add[ik]);
+					sprintf(buffer,"%d add: %s",ik,remote_ble[ik].address);
 					LCD_ShowString(40,20+20*(ik),buffer);
 				}
+
+			}
 
 				LCD_ShowString(40,20+20*(ik+1),"WYJSCIE");
 
@@ -564,15 +501,15 @@ void zarzadzaj_add(uint8_t num)
 
 		uint16_t old_opt=opt;
 
-		EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON  ,pdFALSE,pdFALSE,portMAX_DELAY );
+		EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON  ,pdTRUE,pdFALSE,portMAX_DELAY );
 
 		if(  s& UP_BUTTON ){
-			xEventGroupClearBits(ButtonFlags,UP_BUTTON);
+			//xEventGroupClearBits(ButtonFlags,UP_BUTTON);
 			if(opt<=0)opt=0;
 				else opt--;
 
 		}else if(  s& DOWN_BUTTON ){
-			 xEventGroupClearBits(ButtonFlags,DOWN_BUTTON);
+			// xEventGroupClearBits(ButtonFlags,DOWN_BUTTON);
 			if(opt>=opt_num-1)opt=opt_num-1;
 					else opt++;
 
@@ -586,14 +523,14 @@ void zarzadzaj_add(uint8_t num)
 		}
 		else if(  s& OK_BUTTON ){
 
-			 xEventGroupClearBits(ButtonFlags,OK_BUTTON);
+			// xEventGroupClearBits(ButtonFlags,OK_BUTTON);
 
 			if(opt==num)exit=1;
 			else{
 
-				BLE_Query("AT+CON");
-				BLE_Query(add[opt].address);
-				strcpy(remote_ble[0].address,add[opt].address);
+				//BLE_Query("AT+CON");
+				//BLE_Query(add[opt].address);
+				//strcpy(remote_ble[0].address,add[opt].address);
 
 
 
@@ -637,16 +574,16 @@ void Wysw_szukaj(void){
 
 				uint16_t old_opt=opt;
 
-				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON | ADD_PARS_FLAG ,pdFALSE,pdFALSE,portMAX_DELAY );
+				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON | ADD_PARS_FLAG ,pdTRUE,pdFALSE,portMAX_DELAY );
 
 				if(  s& UP_BUTTON ){
-					 xEventGroupClearBits(ButtonFlags,UP_BUTTON);
+				//	 xEventGroupClearBits(ButtonFlags,UP_BUTTON);
 
 					if(opt<=0)opt=0;
 						else opt--;
 
 				}else if(  s& DOWN_BUTTON ){
-					 xEventGroupClearBits(ButtonFlags,DOWN_BUTTON);
+					// xEventGroupClearBits(ButtonFlags,DOWN_BUTTON);
 
 					if(opt>=opt_num-1)opt=opt_num-1;
 							else opt++;
@@ -660,22 +597,23 @@ void Wysw_szukaj(void){
 
 				}
 				else if(  s& ADD_PARS_FLAG ){
-					 xEventGroupClearBits(ButtonFlags,ADD_PARS_FLAG);
+					// xEventGroupClearBits(ButtonFlags,ADD_PARS_FLAG);
 
 						uint8_t num=0;
-					xQueueReceive(address_n_queue,&num,portMAX_DELAY);
+				//	xQueueReceive(address_n_queue,&num,portMAX_DELAY);
 
-					if(num){
+					//if(num){
 						zarzadzaj_add(num);
+						ch=1;
 
-					}else
-					{
-						LCD_ShowString(40,120,"NIE MA URZADZEN");
+					//}else
+					//{
+					//	LCD_ShowString(40,120,"NIE MA URZADZEN");
 
-					}
+					//}
 				}
 				else if(  s& OK_BUTTON ){
-					 xEventGroupClearBits(ButtonFlags,OK_BUTTON);
+					// xEventGroupClearBits(ButtonFlags,OK_BUTTON);
 
 					switch(opt){
 					case 0:
@@ -718,9 +656,18 @@ void Main_screen(void){
 				if(ch){
 
 
-					char buff[40];
+					unsigned char*	buff;
+					buff = pvPortMalloc(40);
+					uint8_t i;
+					 for(i=0;i<40;i++)buff[i]=0;
 
-					if(temp1 >=0) sprintf(buff, "TEMPERATURA 1:%.2f st C", temp1);
+					 if(sens[0].pomiarC!=0xffff){
+						 temp1=sens[0].pomiarC;
+						float f=(float)sens[0].pomiarU/100;
+						temp1+=f;
+
+						 sprintf(buff, "TEMPERATURA 1:%.2f st C", temp1);
+					 }
 					else sprintf(buff, "TEMPERATURA 1: %s", "????");
 
 					LCD_ShowString(40,20,buff);
@@ -733,23 +680,24 @@ void Main_screen(void){
 
 					Draw_Pointer(opt,old_opt);
 					ch=0;
+					vPortFree(buff);
 				}
 
 
 
 
-				EventBits_t s = xEventGroupWaitBits( ButtonFlags,ALL_BUTTON | ALL_SENSOR ,pdFALSE,pdFALSE,portMAX_DELAY );
+				EventBits_t s = xEventGroupWaitBits( ButtonFlags,UP_BUTTON |DOWN_BUTTON|TEMPDONE_FLAG|OK_BUTTON ,pdTRUE,pdFALSE,portMAX_DELAY );
 
 
 			 if(  s& UP_BUTTON ){
-				 xEventGroupClearBits(ButtonFlags,UP_BUTTON);
+				// xEventGroupClearBits(ButtonFlags,UP_BUTTON);
 					if(opt<=0)opt=0;
 						else opt--;
 
 
 
 				}else if(  s& DOWN_BUTTON ){
-					xEventGroupClearBits(ButtonFlags,DOWN_BUTTON);
+					//xEventGroupClearBits(ButtonFlags,DOWN_BUTTON);
 
 					if(opt>=opt_num-1)opt=opt_num-1;
 							else opt++;
@@ -764,20 +712,24 @@ void Main_screen(void){
 
 				}else if(  s& TEMPDONE_FLAG ){
 
-					xEventGroupClearBits(ButtonFlags,TEMPDONE_FLAG);
+				//	xEventGroupClearBits(ButtonFlags,TEMPDONE_FLAG);
+					//uint8_t num=0;
+					//xQueueReceive(sens_n_queue,&num,portMAX_DELAY);
 
-					SensorIB moj;
-					xQueueReceive(sens_queue,&moj,portMAX_DELAY);
-					temp1=moj.pomiarC;
-					float f=(float)moj.pomiarU/100;
-					temp1+=f;
+					//SensorIB sen[10];
+					//uint8_t i=0;
+					//for(i=0;i<num;i++)xQueueReceive(sens_queue,&sen[i],portMAX_DELAY);
+
+					//temp1=sen[0].pomiarC;
+				//	float f=(float)sen[0].pomiarU/100;
+				//	temp1+=f;
 					ch=1;
 
 
 
 				}else if(  s& OK_BUTTON ){
 
-					xEventGroupClearBits(ButtonFlags,OK_BUTTON);
+					//xEventGroupClearBits(ButtonFlags,OK_BUTTON);
 
 					switch(opt){
 					case 0:UARTprintf("AT+DISI?");	break;
@@ -799,17 +751,7 @@ void Main_screen(void){
 						break;
 					case 2:
 					//	xSemaphoreTake(  semaphore_scan, portMAX_DELAY) ;
-						BLE_Query("AT");
-						vTaskDelay(configTICK_RATE_HZ);
-						BLE_Query("AT+COND43639DC4156");
-						//BLE_Query(remote_ble[0].address);
-
-
-						vTaskDelay(3*configTICK_RATE_HZ);
-
-						BLE_Query("AT+PIOB0");
-						vTaskDelay(configTICK_RATE_HZ);
-						BLE_Query("AT");
+						BLE_Query("AT+ADDR?");
 					//	BLE_Query("AT");
 					//	xSemaphoreGive(  semaphore_scan) ;
 					break;

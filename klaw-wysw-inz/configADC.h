@@ -49,9 +49,11 @@
 #define ALL_SENSOR 0xff00
 
  EventGroupHandle_t ButtonFlags;
+ QueueHandle_t  response_queue;
  QueueHandle_t  address_queue;
  QueueHandle_t  address_n_queue;
  QueueHandle_t  sens_queue;
+ QueueHandle_t  sens_n_queue;
 
  xSemaphoreHandle semaphore_scan;
 

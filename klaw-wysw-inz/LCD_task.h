@@ -36,6 +36,11 @@
 
 
 
+ typedef struct{
+
+	 unsigned char s[800];
+ }Response;
+
 
 
 void LCDTask(void);
