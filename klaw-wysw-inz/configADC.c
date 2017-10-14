@@ -18,9 +18,9 @@ void Joystick_init(void)
 
 	  GPIOPinTypeGPIOInput(GPIO_PORTD_BASE, GPIO_PIN_3);
 	  GPIOPadConfigSet(GPIO_PORTD_BASE ,GPIO_PIN_3,GPIO_STRENGTH_2MA,GPIO_PIN_TYPE_STD_WPU);
-	  GPIOIntTypeSet(GPIO_PORTD_BASE, 0xf,GPIO_RISING_EDGE);
+	  GPIOIntTypeSet(GPIO_PORTD_BASE, 0x8,GPIO_RISING_EDGE);
 	  IntPrioritySet(INT_GPIOD,configMAX_SYSCALL_INTERRUPT_PRIORITY);
-	  	GPIOIntEnable(GPIO_PORTD_BASE,0xf);
+	  	GPIOIntEnable(GPIO_PORTD_BASE,GPIO_PIN_3);
 	  	IntEnable(INT_GPIOD);
 
 	SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
@@ -66,11 +66,11 @@ void Joystick_init(void)
 
 
 
-	ADCComparatorRegionSet( ADC0_BASE, 0, 3000, 4000);
+	ADCComparatorRegionSet( ADC0_BASE, 0, 3000, 3700);
 	ADCComparatorConfigure( ADC0_BASE, 0, ADC_COMP_INT_HIGH_HONCE);
 	ADCComparatorRegionSet( ADC0_BASE, 1, 1000, 2000 );
 	ADCComparatorConfigure( ADC0_BASE, 1, ADC_COMP_INT_LOW_HONCE );
-	ADCComparatorRegionSet( ADC0_BASE, 2, 3000, 4000);
+	ADCComparatorRegionSet( ADC0_BASE, 2, 3000, 3700);
 	ADCComparatorConfigure( ADC0_BASE, 2, ADC_COMP_INT_HIGH_HONCE);
 	ADCComparatorRegionSet( ADC0_BASE, 3, 1000, 2000 );
 	ADCComparatorConfigure( ADC0_BASE, 3, ADC_COMP_INT_LOW_HONCE );
@@ -147,8 +147,10 @@ void AlarmaDig_ISR(void)// rutina de interrupcion de las entradas digitales
 
 	portBASE_TYPE higherPriorityTaskWoken=pdFALSE;
 
+	uint32_t s=GPIOPinRead(GPIO_PORTD_BASE, GPIO_PIN_3);
 
-	xEventGroupSetBitsFromISR(ButtonFlags, OK_BUTTON , &higherPriorityTaskWoken );
+	if(s & 0x8)
+		xEventGroupSetBitsFromISR(ButtonFlags, OK_BUTTON , &higherPriorityTaskWoken );
 
 
 

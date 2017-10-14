@@ -377,7 +377,111 @@ void BLE_Query(char *s){
 
 
 }
+void UUID_parsing(unsigned char * ptr)
+{
+	uint8_t sens_amount=0;
+	ptr++;
 
+	UARTCharPut(UART0_BASE,'|');
+			UARTCharPut(UART0_BASE,'|');
+			UARTCharPut(UART0_BASE,'|');
+			UARTCharPut(UART0_BASE,'|');
+			UARTCharPut(UART0_BASE,'|');
+			UARTCharPut(UART0_BASE,'|');
+			UARTCharPut(UART0_BASE,'\n');
+	//SensorIB sens[10];
+		while( (ptr=strstr(ptr, "OK+DISC:"))!=NULL){
+
+				ptr+=17;
+
+				unsigned char  tmp12[12]={0,};
+				unsigned char  tmp4[4]={0,};
+				unsigned char  tmp2[2]={0,};
+
+
+				unsigned char * w1;
+				unsigned char * w2;
+				unsigned char * w3;
+				w1=strstr(ptr,"12345678");
+				w2=strstr(ptr,"OK+DISC:");
+				w3=strstr(ptr,"OK+DISCE");
+
+				if((w1<w2 || w2==NULL) && w1!=NULL && w1<w3){
+					w1+=8;
+
+						strncpy (tmp4, w1,4 );
+						sens[sens_amount].typ=(uint16_t)strtol(tmp4, NULL, 16);
+
+						w1+=12;
+						strncpy (tmp12, w1,12 );
+						sens[sens_amount].id=(uint16_t)strtol(tmp12, NULL, 16);
+						w1+=17;
+
+
+						 strncpy (tmp2, w1,2 );
+
+						 sens[sens_amount].pomiarC= (uint16_t)strtol(tmp2, NULL, 16);
+						 w1+=2;
+
+						 strncpy (tmp2,w1,2 );
+
+						 sens[sens_amount++].pomiarU= (uint16_t)strtol(tmp2, NULL, 16);
+
+						}
+
+
+				}
+		xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
+		xSemaphoreGive(  bt_tx_sem) ;
+		//xQueueOverwrite(sens_n_queue,&sens_amount);
+		//xQueueReset(sens_queue);
+	/*	while(sens_amount--){
+				xQueueSend(sens_queue,&sens[sens_amount],portMAX_DELAY);
+				if(!sens_amount)xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
+
+			}*/
+
+		//xSemaphoreGive(  semaphore_scan) ;
+}
+
+void address_parsing(unsigned char * ptr){
+
+	uint8_t num=0;
+	ptr+=8;
+	//Remote remote_ble[10];
+
+
+	UARTCharPut(UART0_BASE,'|');
+			UARTCharPut(UART0_BASE,'|');
+			UARTCharPut(UART0_BASE,'|');
+			UARTCharPut(UART0_BASE,'|');
+			UARTCharPut(UART0_BASE,'|');
+			UARTCharPut(UART0_BASE,'|');
+			UARTCharPut(UART0_BASE,'\n');
+	//xQueueReset(address_queue);
+	while( (ptr=strstr(ptr, "OK+DIS"))!=NULL){
+
+		if(ptr == strstr(ptr, "OK+DISCE")){
+
+			ptr +=5;
+			continue;
+		}
+
+		ptr+=8;
+
+		strncpy(remote_ble[num].address,ptr,12);
+		ptr+=10;
+
+	//	xQueueSend(address_queue,&a,portMAX_DELAY);
+		num++;
+
+	}
+
+	//xQueueOverwrite(address_n_queue,&num);
+	xSemaphoreGive(  bt_tx_sem) ;
+	xEventGroupSetBits(ButtonFlags, ADD_PARS_FLAG);
+
+}
 void UARTTask(void){
 
 	while(1){
@@ -409,19 +513,10 @@ void UARTTask(void){
 
 			}while(xTotalTimeSuspended < 4* configTICK_RATE_HZ);
 
-		xQueueOverwrite( response_queue,pcBuffer );
-			//xQueueSend(response_queue,pcBuffer,portMAX_DELAY);
-
-
 			UARTCharPut(UART0_BASE,'\n');
 			UARTCharPut(UART0_BASE,'\r');
-			//UARTFlushRx();
 
-			//unsigned char	k[500]={0,};
-			//strcpy(k,pcBuffer);
-
-			//UARTFlushRx();
-			/*unsigned char * wynik, * wynik2, * wynik3;
+			unsigned char * wynik, * wynik2, * wynik3;
 
 			wynik=strstr(pcBuffer, "OK+DISIS");
 
@@ -441,7 +536,7 @@ void UARTTask(void){
 			if(strstr(wynik3, "OK+DISIS")==NULL && strstr(wynik3, "OK+DISC")!=NULL){ // w [rzypadku gdy po skanie beacon jest jeszcze cos w buferze
 				address_parsing(wynik3);
 			}
-*/
+
 
 			/*if(pcBuffer[0]!=0){
 
@@ -450,7 +545,7 @@ void UARTTask(void){
 				//LCD_ShowString(50,290,pcBuffer);
 
 			}*/
-		//	xSemaphoreGive(  semaphore_scan) ;
+			//xSemaphoreGive(  bt_tx_sem) ;
 	 //vPortFree(pcBuffer);
 	}
 
@@ -686,8 +781,8 @@ void Main_screen(void){
 
 
 
-				EventBits_t s = xEventGroupWaitBits( ButtonFlags,UP_BUTTON |DOWN_BUTTON|TEMPDONE_FLAG|OK_BUTTON ,pdTRUE,pdFALSE,portMAX_DELAY );
-
+				EventBits_t s = xEventGroupWaitBits( ButtonFlags,UP_BUTTON |LEFT_BUTTON|DOWN_BUTTON|RIGHT_BUTTON|TEMPDONE_FLAG|OK_BUTTON ,pdTRUE,pdFALSE,portMAX_DELAY );
+				xEventGroupClearBits(ButtonFlags,OK_BUTTON);
 
 			 if(  s& UP_BUTTON ){
 				// xEventGroupClearBits(ButtonFlags,UP_BUTTON);
@@ -729,31 +824,57 @@ void Main_screen(void){
 
 				}else if(  s& OK_BUTTON ){
 
-					//xEventGroupClearBits(ButtonFlags,OK_BUTTON);
+
+					Switch x;
+					int i;
 
 					switch(opt){
 					case 0:UARTprintf("AT+DISI?");	break;
 
 					case 1:
-						//xSemaphoreTake(  semaphore_scan, portMAX_DELAY) ;
-						BLE_Query("AT");
-						vTaskDelay(configTICK_RATE_HZ);
-						BLE_Query("AT+COND43639DC4156");
-						//BLE_Query(remote_ble[0].address);
+						UARTCharPut(UART0_BASE,'|');
+							strcpy(x.addr,"AT+COND43639DC4156");
+							x.action=1;
+							xQueueSend(tx_queue,&x,portMAX_DELAY);
+						/*UARTprintf("AT");
+								vTaskDelay(0.5*configTICK_RATE_HZ);
+								UARTprintf("AT+COND43639DC4156");
+								//UARTprintf(x.addr);
 
 
-						vTaskDelay(3*configTICK_RATE_HZ);
 
-						BLE_Query("AT+PIOB1");
-						vTaskDelay(configTICK_RATE_HZ);
-						BLE_Query("AT");
-						//xSemaphoreGive(  semaphore_scan) ;
+								vTaskDelay(2*configTICK_RATE_HZ);
+
+
+
+									UARTprintf("LEDON");
+
+
+								vTaskDelay(5*configTICK_RATE_HZ);
+								//UARTprintf("AT");
+								vTaskDelay(2*configTICK_RATE_HZ);*/
+
 						break;
 					case 2:
-					//	xSemaphoreTake(  semaphore_scan, portMAX_DELAY) ;
-						BLE_Query("AT+ADDR?");
-					//	BLE_Query("AT");
-					//	xSemaphoreGive(  semaphore_scan) ;
+						strcpy(x.addr,"AT+COND43639DC4156");
+						x.action=0;
+						xQueueSend(tx_queue,&x,portMAX_DELAY);
+						UARTCharPut(UART0_BASE,'|');
+						/*UARTprintf("AT");
+								vTaskDelay(0.5*configTICK_RATE_HZ);
+								UARTprintf("AT+COND43639DC4156");
+								//UARTprintf(x.addr);
+
+
+
+								vTaskDelay(2*configTICK_RATE_HZ);
+
+								 UARTprintf("LEDOFF");
+
+								vTaskDelay(5*configTICK_RATE_HZ);
+								//UARTprintf("AT");
+								vTaskDelay(2*configTICK_RATE_HZ);*/
+
 					break;
 
 					case 3:Wysw_szukaj();

@@ -115,122 +115,54 @@ void vApplicationMallocFailedHook (void)
 void TEMPTask(void){
 
 	while(1){
+		xSemaphoreTake(  bt_tx_sem, portMAX_DELAY) ;
 		UARTprintf("AT+DISI?");
 		vTaskDelay(10*configTICK_RATE_HZ);
+		xSemaphoreGive(  bt_tx_sem) ;
+		vTaskDelay(20*configTICK_RATE_HZ);
 
-					//
-	/*	unsigned char cThisChar;
-		  do
-		    {
-		        //
-		        // Read a character using the blocking read function.  This function
-		        // will not return until a character is available.
-		        //
-		        cThisChar = UARTCharGet(UART0_BASE);
+	}
+}
 
-		        //
-		        // Write the same character using the blocking write function.  This
-		        // function will not return until there was space in the FIFO and
-		        // the character is written.
-		        //
-		        UARTCharPut(UART0_BASE, cThisChar);
-		    }
-		    while((cThisChar != '\n') && (cThisChar != '\r'));*/
+
+void TxTask(void){
+
+	while(1){
+		Switch x;
+
+
+
+		xQueueReceive(tx_queue,&x,portMAX_DELAY);
+
+
+		xSemaphoreTake(  bt_tx_sem, portMAX_DELAY) ;
+		UARTprintf("AT");
+		vTaskDelay(0.5*configTICK_RATE_HZ);
+		UARTprintf("AT+COND43639DC4156");
+		//UARTprintf(x.addr);
+
+
+
+		vTaskDelay(0.5*configTICK_RATE_HZ);
+
+		if(x.action){
+
+			UARTprintf("LEDON");
+		}else UARTprintf("LEDOFF");
+
+		vTaskDelay(configTICK_RATE_HZ);
+		UARTprintf("AT");
+		vTaskDelay(2*configTICK_RATE_HZ);
+		xSemaphoreGive(  bt_tx_sem) ;
+
+
+
 	}
 }
 
 
 
-
-void UUID_parsing(unsigned char * ptr)
-{
-	uint8_t sens_amount=0;
-	ptr++;
-	//SensorIB sens[10];
-		while( (ptr=strstr(ptr, "OK+DISC:"))!=NULL){
-
-				ptr+=17;
-
-				unsigned char  tmp12[12]={0,};
-				unsigned char  tmp4[4]={0,};
-				unsigned char  tmp2[2]={0,};
-
-
-				unsigned char * w1;
-				unsigned char * w2;
-				unsigned char * w3;
-				w1=strstr(ptr,"12345678");
-				w2=strstr(ptr,"OK+DISC:");
-				w3=strstr(ptr,"OK+DISCE");
-
-				if((w1<w2 || w2==NULL) && w1!=NULL && w1<w3){
-					w1+=8;
-
-						strncpy (tmp4, w1,4 );
-						sens[sens_amount].typ=(uint16_t)strtol(tmp4, NULL, 16);
-
-						w1+=12;
-						strncpy (tmp12, w1,12 );
-						sens[sens_amount].id=(uint16_t)strtol(tmp12, NULL, 16);
-						w1+=17;
-
-
-						 strncpy (tmp2, w1,2 );
-
-						 sens[sens_amount].pomiarC= (uint16_t)strtol(tmp2, NULL, 16);
-						 w1+=2;
-
-						 strncpy (tmp2,w1,2 );
-
-						 sens[sens_amount++].pomiarU= (uint16_t)strtol(tmp2, NULL, 16);
-
-						}
-
-
-				}
-		xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
-
-		//xQueueOverwrite(sens_n_queue,&sens_amount);
-		//xQueueReset(sens_queue);
-	/*	while(sens_amount--){
-				xQueueSend(sens_queue,&sens[sens_amount],portMAX_DELAY);
-				if(!sens_amount)xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
-
-			}*/
-
-		//xSemaphoreGive(  semaphore_scan) ;
-}
-
-void address_parsing(unsigned char * ptr){
-
-	uint8_t num=0;
-	ptr+=8;
-	//Remote remote_ble[10];
-
-	//xQueueReset(address_queue);
-	while( (ptr=strstr(ptr, "OK+DIS"))!=NULL){
-
-		if(ptr == strstr(ptr, "OK+DISCE")){
-
-			ptr +=5;
-			continue;
-		}
-		Address a;
-		ptr+=8;
-		strncpy(a.address,ptr,12);
-		ptr+=10;
-
-	//	xQueueSend(address_queue,&a,portMAX_DELAY);
-		num++;
-
-	}
-
-	//xQueueOverwrite(address_n_queue,&num);
-
-	xEventGroupSetBits(ButtonFlags, ADD_PARS_FLAG);
-//	xSemaphoreGive(  semaphore_scan) ;
-}
-
+/*
 void ParserTask(void)
 {
 	while(1){
@@ -266,7 +198,7 @@ void ParserTask(void)
 					/*wynik3=strstr(pcBuffer, "OK+DISCE");
 					if(strstr(wynik3, "OK+DISIS")==NULL && strstr(wynik3, "OK+DISC")!=NULL){ // w [rzypadku gdy po skanie beacon jest jeszcze cos w buferze
 						address_parsing(wynik3);
-					}*/
+					}
 
 
 
@@ -274,7 +206,7 @@ void ParserTask(void)
 	}
 
 }
-
+*/
 
 //*****************************************************************************
 //
@@ -367,8 +299,8 @@ int main(void){
 		while(1);
 	}
 
-	semaphore_scan=  xSemaphoreCreateMutex();
-	if(semaphore_scan==NULL)
+	bt_tx_sem=  xSemaphoreCreateMutex();
+	if(bt_tx_sem==NULL)
 	{
 		while(1);
 	}
@@ -378,6 +310,11 @@ int main(void){
 		while(1);
 	}
 
+
+
+	tx_queue=xQueueCreate(1,sizeof(Switch));
+					if(NULL==tx_queue)
+							while(1);
 
 
 	response_queue=xQueueCreate(1,sizeof(Response));
@@ -406,15 +343,20 @@ int main(void){
 		while(1);
 	}
 
-	if((xTaskCreate(ParserTask, (portCHAR *)"Parser", 1024,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
+	/*if((xTaskCreate(ParserTask, (portCHAR *)"Parser", 1024,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
 		{
 			while(1);
-		}
+		}*/
 
 	if((xTaskCreate(TEMPTask, (portCHAR *)"temp", 128,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
 	{
 		while(1);
 	}
+
+	if((xTaskCreate(TxTask, (portCHAR *)"Tx", 128,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
+		{
+			while(1);
+		}
 
 	//
 	// Arranca el  scheduler.  Pasamos a ejecutar las tareas que se hayan activado.

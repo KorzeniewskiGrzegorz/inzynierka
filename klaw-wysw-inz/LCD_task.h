@@ -38,10 +38,14 @@
 
  typedef struct{
 
-	 unsigned char s[800];
+	 unsigned char s[30];
  }Response;
 
+ typedef struct{
 
+	 unsigned char addr[12];
+	 uint8_t action;
+ }Switch;
 
 void LCDTask(void);
 void UARTTask(void);

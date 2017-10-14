@@ -49,13 +49,16 @@
 #define ALL_SENSOR 0xff00
 
  EventGroupHandle_t ButtonFlags;
+ QueueHandle_t  tx_queue;
+ QueueHandle_t  tx_s_queue;
+ QueueHandle_t  response_queue;
  QueueHandle_t  response_queue;
  QueueHandle_t  address_queue;
  QueueHandle_t  address_n_queue;
  QueueHandle_t  sens_queue;
  QueueHandle_t  sens_n_queue;
 
- xSemaphoreHandle semaphore_scan;
+ xSemaphoreHandle bt_tx_sem;
 
  typedef struct {
 	uint16_t typ;
