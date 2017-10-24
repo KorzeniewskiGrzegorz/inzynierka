@@ -34,7 +34,9 @@
 #include "utils/uartstdio.h"
 #include "IFTSPI2_2LCD.h"
 
-
+extern SensorIB sens[10];
+extern Remote remote_ble[10];
+extern uint8_t remote_ble_num;
 
  typedef struct{
 

@@ -44,12 +44,13 @@ unsigned int BACK_COLOR, POINT_COLOR;
 #define LED1TASKPRIO 1
 #define LED1TASKSTACKSIZE 128
 
-//Globales
+//Globals
 
 uint32_t g_ui32CPUUsage;
 uint32_t g_ulSystemClock;
  SensorIB sens[10];
  Remote remote_ble[10];
+ uint8_t remote_ble_num=0;
 
 
 //*****************************************************************************
@@ -136,10 +137,13 @@ void TxTask(void){
 
 
 		xSemaphoreTake(  bt_tx_sem, portMAX_DELAY) ;
+		//char buff [18];
+		 //sprintf(buff, "AT+CON%s", x.addr);
 		UARTprintf("AT");
 		vTaskDelay(0.5*configTICK_RATE_HZ);
+		//UARTprintf(&buff[0]);
 		UARTprintf("AT+COND43639DC4156");
-		//UARTprintf(x.addr);
+
 
 
 
@@ -353,7 +357,7 @@ int main(void){
 		while(1);
 	}
 
-	if((xTaskCreate(TxTask, (portCHAR *)"Tx", 128,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
+	if((xTaskCreate(TxTask, (portCHAR *)"Tx", 256,NULL,tskIDLE_PRIORITY + 1, NULL) != pdTRUE))
 		{
 			while(1);
 		}
