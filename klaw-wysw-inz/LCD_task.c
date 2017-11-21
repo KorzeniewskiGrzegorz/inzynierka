@@ -360,20 +360,17 @@ const uint8_t intro[]={0xb6,0xdf,0xc6,0xdf,0xbe,0xdf,0xb6,0xdf,0xae,0xbf,0xb6,0x
 void Draw_Pointer(uint8_t opt,uint8_t old_opt){
 
 	uint16_t y;
-	y=20+ opt*40;
+	y=140+ opt*20;
 
-	LCD_Fill(20,old_opt*40+20,30,old_opt*40+40,0x0000);
-	LCD_ShowChar(20,y,'*',1);
+	LCD_Fill(60,old_opt*20+140,70,old_opt*20+160,0x0000);
+	LCD_ShowChar(60,y,'>',1);
 
 }
 
 
 void BLE_Query(char *s){
 
-
-
 		UARTprintf(s);
-
 
 }
 void UUID_parsing(unsigned char * ptr)
@@ -432,15 +429,7 @@ void UUID_parsing(unsigned char * ptr)
 				}
 		xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
 		xSemaphoreGive(  bt_tx_sem) ;
-		//xQueueOverwrite(sens_n_queue,&sens_amount);
-		//xQueueReset(sens_queue);
-	/*	while(sens_amount--){
-				xQueueSend(sens_queue,&sens[sens_amount],portMAX_DELAY);
-				if(!sens_amount)xEventGroupSetBits(ButtonFlags, TEMPDONE_FLAG);
 
-			}*/
-
-		//xSemaphoreGive(  semaphore_scan) ;
 }
 
 void address_parsing(unsigned char * ptr){
@@ -529,8 +518,6 @@ void UARTTask(void){
 				address_parsing(wynik2);
 			}
 
-
-
 			/*wynik3=strstr(pcBuffer, "OK+DISCE");
 			if(strstr(wynik3, "OK+DISIS")==NULL && strstr(wynik3, "OK+DISC")!=NULL){ // w [rzypadku gdy po skanie beacon jest jeszcze cos w buferze
 				address_parsing(wynik3);
@@ -547,17 +534,14 @@ void UARTTask(void){
 			//xSemaphoreGive(  bt_tx_sem) ;
 	 //vPortFree(pcBuffer);
 	}
-
 }
 
 void zarzadzaj_add(void)
 {
 
 	uint8_t opt_num=remote_ble_num+1;
-
 	 uint8_t ch=1;
 	 uint8_t exit=0;
-
 	 uint8_t opt=0;
 
 /*
@@ -566,7 +550,6 @@ void zarzadzaj_add(void)
 	for(ik=0;ik<num;ik++){
 		xQueueReceive(address_queue,&add[ik],portMAX_DELAY);
 	}*/
-
 
 	do{
 
@@ -582,16 +565,13 @@ void zarzadzaj_add(void)
 					sprintf(buffer,"%d add: %s",ik,remote_ble[ik].address);
 					LCD_ShowString(40,20+20*(ik),buffer);
 				}
-
 			}
 
 				LCD_ShowString(40,20+20*(ik+1),"WYJSCIE");
 
-
 			Draw_Pointer(0,0);
 			ch=0;
 		}
-
 
 		uint16_t old_opt=opt;
 
@@ -626,21 +606,14 @@ void zarzadzaj_add(void)
 				//BLE_Query(add[opt].address);
 				//strcpy(remote_ble[0].address,add[opt].address);
 
-
-
 			}
 		}
 
 		if(!ch)Draw_Pointer(opt,old_opt);
 
-
 	}while(!exit);
 
-
-
-
 }
-
 
 void Wysw_szukaj(void){
 
@@ -652,10 +625,6 @@ void Wysw_szukaj(void){
 
 
 	do{
-
-
-
-
 				if(ch){
 					LCD_Clear(BLACK);
 					LCD_ShowString(40,20,"SZUKAJ ADRESOW");
@@ -729,27 +698,19 @@ void Wysw_szukaj(void){
 	  }while(!exit);
 }
 
-
-
 void Main_screen(void){
 
 
 	 uint8_t ch=1;
 
-	const uint8_t opt_num=3;
+	const uint8_t opt_num=2;
 	 uint8_t opt=0;
 
 	 float temp1 = -1.0;
 
 	do{
-
-
-
 				uint16_t old_opt=opt;
-
 				if(ch){
-
-
 					unsigned char*	buff;
 					buff = pvPortMalloc(40);
 					uint8_t i;
@@ -760,25 +721,25 @@ void Main_screen(void){
 						float f=(float)sens[0].pomiarU/100;
 						temp1+=f;
 
-						 sprintf(buff, "%.2f st C", temp1);
+						 sprintf(buff, "TEMPERATURA:%.2f st C", temp1);
 					 }
-					else strcpy(buff, "????");
+					else strcpy(buff, "TEMPERATURA:????");
 
-					LCD_ShowString(80,150,buff);
-
-
-					LCD_ShowString(40,20,"led on ");
-					LCD_ShowString(40,60,"led off ");
-
-					LCD_ShowString(40,100,"SZUKAJ");
+					LCD_ShowString(20,30,buff);
+					if(ledState){
+						LCD_ShowString(20,60,"OSWIETLENIE:  ON");
+					}else{
+						LCD_ShowString(20,60,"OSWIETLENIE: OFF");
+					}
+					LCD_ShowString(20,120,"Sterowanie oswietleniem:");
+					LCD_ShowString(80,140,"Wlacz");
+					LCD_ShowString(80,160,"Wylacz");
+					//LCD_ShowString(40,100,"SZUKAJ");
 
 					Draw_Pointer(opt,old_opt);
 					ch=0;
 					vPortFree(buff);
 				}
-
-
-
 
 				EventBits_t s = xEventGroupWaitBits( ButtonFlags,UP_BUTTON |LEFT_BUTTON|DOWN_BUTTON|RIGHT_BUTTON|TEMPDONE_FLAG|OK_BUTTON ,pdFALSE,pdFALSE,portMAX_DELAY );
 				xEventGroupClearBits(ButtonFlags,OK_BUTTON);
@@ -787,43 +748,31 @@ void Main_screen(void){
 				 xEventGroupClearBits(ButtonFlags,UP_BUTTON);
 					if(opt<=0)opt=0;
 						else opt--;
-
-
-
 				}else if(  s& DOWN_BUTTON ){
 					xEventGroupClearBits(ButtonFlags,DOWN_BUTTON);
 
 					if(opt>=opt_num-1)opt=opt_num-1;
 							else opt++;
-
-
 				}else if(  s& LEFT_BUTTON ){
 					xEventGroupClearBits(ButtonFlags,LEFT_BUTTON);
 					//x-=10;
 				}else if(  s& RIGHT_BUTTON ){
 					xEventGroupClearBits(ButtonFlags,RIGHT_BUTTON);
 					//x+=10;
-
 				}else if(  s& TEMPDONE_FLAG ){
-
 					xEventGroupClearBits(ButtonFlags,TEMPDONE_FLAG);
 					//uint8_t num=0;
 					//xQueueReceive(sens_n_queue,&num,portMAX_DELAY);
-
 					//SensorIB sen[10];
 					//uint8_t i=0;
 					//for(i=0;i<num;i++)xQueueReceive(sens_queue,&sen[i],portMAX_DELAY);
-
 					//temp1=sen[0].pomiarC;
 				//	float f=(float)sen[0].pomiarU/100;
 				//	temp1+=f;
 					ch=1;
-
-
-
 				}else if(  s& OK_BUTTON ){
 					xEventGroupClearBits(ButtonFlags,OK_BUTTON);
-
+					ch=1;
 					Switch x;
 					int i;
 
@@ -832,56 +781,22 @@ void Main_screen(void){
 
 					case 0:
 						UARTCharPut(UART0_BASE,'|');
-							strcpy(x.addr,remote_ble[0].address);
-
-							x.action=1;
-							xQueueOverwrite(tx_queue,&x);
-						/*UARTprintf("AT");
-								vTaskDelay(0.5*configTICK_RATE_HZ);
-								UARTprintf("AT+COND43639DC4156");
-								//UARTprintf(x.addr);
-
-
-
-								vTaskDelay(2*configTICK_RATE_HZ);
-
-
-
-									UARTprintf("LEDON");
-
-
-								vTaskDelay(5*configTICK_RATE_HZ);
-								//UARTprintf("AT");
-								vTaskDelay(2*configTICK_RATE_HZ);*/
-
+						strcpy(x.addr,remote_ble[0].address);
+						x.action=1;
+						ledState=1;
+						xQueueOverwrite(tx_queue,&x);
 						break;
 					case 1:
-						//strcpy(x.addr,"AT+COND43639DC4156");
 						strcpy(x.addr,remote_ble[0].address);
 						x.action=0;
+						ledState=0;
 						xQueueOverwrite(tx_queue,&x);
 						UARTCharPut(UART0_BASE,'|');
-						/*UARTprintf("AT");
-								vTaskDelay(0.5*configTICK_RATE_HZ);
-								UARTprintf("AT+COND43639DC4156");
-								//UARTprintf(x.addr);
-
-
-
-								vTaskDelay(2*configTICK_RATE_HZ);
-
-								 UARTprintf("LEDOFF");
-
-								vTaskDelay(5*configTICK_RATE_HZ);
-								//UARTprintf("AT");
-								vTaskDelay(2*configTICK_RATE_HZ);*/
-
-					break;
-
+						break;
 					case 2:Wysw_szukaj();
-							ch=1;
-							opt=0;
-							LCD_Clear(BLACK);
+						ch=1;
+						opt=0;
+						LCD_Clear(BLACK);
 						break;
 
 					/*case 3:
@@ -904,31 +819,19 @@ void Main_screen(void){
 	  }while(1);
 }
 
-
-
-
 void LCDTask(void)
 {
-
-
 
 	LCD_Clear(BLACK);
 	LCD_DrawImage(0,0, 240,319, intro);
 
 	UARTprintf("AT");
 
-
 	while(1)
 	{
 		xEventGroupWaitBits( ButtonFlags,ALL_BUTTON,pdTRUE,pdFALSE,portMAX_DELAY );
+		LCD_Fill(40,240,220,280,0x0000);
 		Main_screen();
-
-
-
-
-
 	}
-
-
 }
 

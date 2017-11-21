@@ -37,6 +37,7 @@
 extern SensorIB sens[10];
 extern Remote remote_ble[10];
 extern uint8_t remote_ble_num;
+extern uint8_t ledState;
 
  typedef struct{
 

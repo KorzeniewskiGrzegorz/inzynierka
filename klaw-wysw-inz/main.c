@@ -45,7 +45,7 @@ unsigned int BACK_COLOR, POINT_COLOR;
 #define LED1TASKSTACKSIZE 128
 
 //Globals
-
+uint8_t ledState=0;
 uint32_t g_ui32CPUUsage;
 uint32_t g_ulSystemClock;
  SensorIB sens[10];
@@ -118,9 +118,10 @@ void TEMPTask(void){
 	while(1){
 		xSemaphoreTake(  bt_tx_sem, portMAX_DELAY) ;
 		UARTprintf("AT+DISI?");
+
 		vTaskDelay(10*configTICK_RATE_HZ);
 		xSemaphoreGive(  bt_tx_sem) ;
-		vTaskDelay(20*configTICK_RATE_HZ);
+		vTaskDelay(47*configTICK_RATE_HZ);
 
 	}
 }
@@ -152,11 +153,14 @@ void TxTask(void){
 		if(x.action){
 
 			UARTprintf("LEDON");
-		}else UARTprintf("LEDOFF");
 
+		}else{
+			UARTprintf("LEDOFF");
+
+		}
 		vTaskDelay(configTICK_RATE_HZ);
 		UARTprintf("AT");
-		vTaskDelay(2*configTICK_RATE_HZ);
+		vTaskDelay(0.5*configTICK_RATE_HZ);
 		xSemaphoreGive(  bt_tx_sem) ;
 
 
