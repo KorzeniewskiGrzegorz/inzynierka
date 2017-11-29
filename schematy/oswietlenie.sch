@@ -4447,7 +4447,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="15.24" y1="5.08" x2="-2.54" y2="5.08" width="0.254" layer="94"/>
 <pin name="+5V" x="-7.62" y="2.54" length="middle"/>
 <pin name="GND" x="-7.62" y="0" length="middle"/>
-<pin name="IN" x="-7.62" y="-2.54" length="middle"/>
+<pin name="CTRL" x="-7.62" y="-2.54" length="middle"/>
 <pin name="NO" x="20.32" y="-2.54" length="middle" rot="R180"/>
 <pin name="COM" x="20.32" y="0" length="middle" rot="R180"/>
 <pin name="NC" x="20.32" y="2.54" length="middle" rot="R180"/>
@@ -4464,8 +4464,8 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <connects>
 <connect gate="G$1" pin="+5V" pad="P$1"/>
 <connect gate="G$1" pin="COM" pad="P$5"/>
+<connect gate="G$1" pin="CTRL" pad="P$3"/>
 <connect gate="G$1" pin="GND" pad="P$2"/>
-<connect gate="G$1" pin="IN" pad="P$3"/>
 <connect gate="G$1" pin="NC" pad="P$6"/>
 <connect gate="G$1" pin="NO" pad="P$4"/>
 </connects>
@@ -4673,7 +4673,8 @@ Pro Mini</text>
 <wire x1="183.388" y1="65.532" x2="188.722" y2="61.214" width="0.4064" layer="94"/>
 <wire x1="188.722" y1="65.786" x2="183.896" y2="60.706" width="0.4064" layer="94"/>
 <text x="180.34" y="68.58" size="1.778" layer="95">Oświetlenie</text>
-<text x="149.86" y="53.34" size="3.81" layer="111">Przekaźnik</text>
+<text x="147.32" y="50.8" size="3.81" layer="111">    Moduł
+Przekaźnika</text>
 </plain>
 <instances>
 <instance part="U$1" gate="G$1" x="97.79" y="48.26"/>
@@ -4775,7 +4776,7 @@ Pro Mini</text>
 <label x="71.12" y="45.72" size="1.778" layer="95" rot="R180" xref="yes"/>
 </segment>
 <segment>
-<pinref part="U$2" gate="G$1" pin="IN"/>
+<pinref part="U$2" gate="G$1" pin="CTRL"/>
 <wire x1="147.32" y1="40.64" x2="144.78" y2="40.64" width="0.1524" layer="91"/>
 <wire x1="144.78" y1="40.64" x2="144.78" y2="35.56" width="0.1524" layer="91"/>
 <label x="144.78" y="35.56" size="1.778" layer="95" rot="R270" xref="yes"/>
